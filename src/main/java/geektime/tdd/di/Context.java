@@ -26,6 +26,10 @@ public class Context {
         providers.put(type, new ConstructorProvider<>(constructor));
     }
 
+    public <T> Optional<T> get(Class<T> type) {
+        return Optional.ofNullable(providers.get(type)).map(p -> (T) p.get());
+    }
+
     class ConstructorProvider<T> implements Provider<T> {
         private Constructor<T> constructor;
         private boolean constructing = false;
@@ -65,9 +69,4 @@ public class Context {
                     }
                 });
     }
-
-    public <T> Optional<T> get(Class<T> type) {
-        return Optional.ofNullable(providers.get(type)).map(p -> (T) p.get());
-    }
-
 }

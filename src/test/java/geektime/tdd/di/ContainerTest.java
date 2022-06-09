@@ -101,6 +101,15 @@ public class ContainerTest {
 
                 assertThrows(CyclicDependenciesFound.class, () -> context.get(Component.class));
             }
+
+            @Test
+            public void should_throw_exception_if_transitive_cyclic_dependencies_found() {
+                context.bind(Component.class, ComponentWithInjectConstructor.class);
+                context.bind(Dependency.class, DependencyDependedOnAnotherDependency.class);
+                context.bind(AnotherDependency.class, AnotherDependencyDependedOnComponent.class);
+
+                assertThrows(CyclicDependenciesFound.class, () -> context.get(Component.class));
+            }
         }
 
         @Nested
@@ -130,6 +139,9 @@ interface Component {
 }
 
 interface Dependency {
+}
+
+interface AnotherDependency {
 }
 
 
@@ -185,6 +197,26 @@ class DependencyDependedOnComponent implements Dependency {
     @Inject
 
     public DependencyDependedOnComponent(Component component) {
+        this.component = component;
+    }
+}
+
+class DependencyDependedOnAnotherDependency implements Dependency {
+    private AnotherDependency dependency;
+
+    @Inject
+
+    public DependencyDependedOnAnotherDependency(AnotherDependency dependency) {
+        this.dependency = dependency;
+    }
+}
+
+class AnotherDependencyDependedOnComponent implements AnotherDependency {
+    private Component component;
+
+    @Inject
+
+    public AnotherDependencyDependedOnComponent(Component component) {
         this.component = component;
     }
 }
