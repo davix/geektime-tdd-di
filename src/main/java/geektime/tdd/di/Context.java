@@ -5,7 +5,9 @@ import jakarta.inject.Provider;
 
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.stream;
 
@@ -17,16 +19,10 @@ public class Context {
     }
 
     public <T, Impl extends T> void bind(Class<T> type, Class<Impl> implementation) {
-        Constructor<?>[] injectConstructors = stream(implementation.getConstructors())
-                .filter(c -> c.isAnnotationPresent(Inject.class)).toArray(Constructor<?>[]::new);
-        if (injectConstructors.length > 1) throw new IllegalComponentException();
-        if (injectConstructors.length == 0 && stream(implementation.getConstructors())
-                .filter(c -> c.getParameters().length == 0).findFirst().map(c -> false).orElse(true))
-            throw new IllegalComponentException();
+        Constructor<Impl> constructor = getConstructor(implementation);
 
         providers.put(type, (Provider<T>) () -> {
             try {
-                Constructor<Impl> constructor = getConstructor(implementation);
                 Object[] dependencies = stream(constructor.getParameters())
                         .map(p -> get(p.getType()))
                         .toArray(Object[]::new);
@@ -38,13 +34,16 @@ public class Context {
     }
 
     private <T> Constructor<T> getConstructor(Class<T> implementation) {
-        return (Constructor<T>) stream(implementation.getConstructors())
-                .filter(c -> c.isAnnotationPresent(Inject.class))
+        List<Constructor<?>> constructors = stream(implementation.getConstructors())
+                .filter(c -> c.isAnnotationPresent(Inject.class)).collect(Collectors.toList());
+        if (constructors.size() > 1) throw new IllegalComponentException();
+
+        return (Constructor<T>) constructors.stream()
                 .findFirst().orElseGet(() -> {
                     try {
                         return implementation.getConstructor();
                     } catch (Exception e) {
-                        throw new RuntimeException(e);
+                        throw new IllegalComponentException();
                     }
                 });
     }
