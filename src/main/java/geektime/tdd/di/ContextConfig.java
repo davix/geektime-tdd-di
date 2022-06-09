@@ -1,7 +1,6 @@
 package geektime.tdd.di;
 
 import jakarta.inject.Inject;
-import jakarta.inject.Provider;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -16,8 +15,12 @@ import static java.util.Arrays.stream;
 public class ContextConfig {
     private Map<Class<?>, Provider<?>> providers = new HashMap<>();
 
+    interface Provider<T> {
+        T get(Context context);
+    }
+
     public <T> void bind(Class<T> type, T instance) {
-        providers.put(type, (Provider<T>) () -> instance);
+        providers.put(type, (Provider<T>) context -> instance);
     }
 
     public <T, Impl extends T> void bind(Class<T> type, Class<Impl> implementation) {
@@ -30,7 +33,7 @@ public class ContextConfig {
         return new Context() {
             @Override
             public <T> Optional<T> get(Class<T> type) {
-                return Optional.ofNullable(providers.get(type)).map(p -> (T) p.get());
+                return Optional.ofNullable(providers.get(type)).map(p -> (T) p.get(this));
             }
         };
     }
@@ -46,12 +49,12 @@ public class ContextConfig {
         }
 
         @Override
-        public T get() {
+        public T get(Context context) {
             if (constructing) throw new CyclicDependenciesFound(type);
             try {
                 constructing = true;
                 Object[] dependencies = stream(constructor.getParameters())
-                        .map(p -> getContext().get(p.getType()).orElseThrow(() -> new DependencyNotFoundException(type, p.getType())))
+                        .map(p -> context.get(p.getType()).orElseThrow(() -> new DependencyNotFoundException(type, p.getType())))
                         .toArray(Object[]::new);
                 return (T) constructor.newInstance(dependencies);
             } catch (CyclicDependenciesFound e) {
