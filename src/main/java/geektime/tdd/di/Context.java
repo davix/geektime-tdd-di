@@ -4,7 +4,6 @@ import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 
 import java.lang.reflect.Constructor;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,6 +17,13 @@ public class Context {
     }
 
     public <T, Impl extends T> void bind(Class<T> type, Class<Impl> implementation) {
+        Constructor<?>[] injectConstructors = stream(implementation.getConstructors())
+                .filter(c -> c.isAnnotationPresent(Inject.class)).toArray(Constructor<?>[]::new);
+        if (injectConstructors.length > 1) throw new IllegalComponentException();
+        if (injectConstructors.length == 0 && stream(implementation.getConstructors())
+                .filter(c -> c.getParameters().length == 0).findFirst().map(c -> false).orElse(true))
+            throw new IllegalComponentException();
+
         providers.put(type, (Provider<T>) () -> {
             try {
                 Constructor<Impl> constructor = getConstructor(implementation);
