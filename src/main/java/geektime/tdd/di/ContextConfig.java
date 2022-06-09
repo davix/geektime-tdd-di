@@ -4,16 +4,19 @@ import jakarta.inject.Inject;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Parameter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 
 public class ContextConfig {
     private Map<Class<?>, Provider<?>> providers = new HashMap<>();
+    private Map<Class<?>, List<Class<?>>> dependencies = new HashMap<>();
 
     interface Provider<T> {
         T get(Context context);
@@ -21,15 +24,22 @@ public class ContextConfig {
 
     public <T> void bind(Class<T> type, T instance) {
         providers.put(type, (Provider<T>) context -> instance);
+        dependencies.put(type, asList());
     }
 
     public <T, Impl extends T> void bind(Class<T> type, Class<Impl> implementation) {
         Constructor<Impl> constructor = getConstructor(implementation);
-
         providers.put(type, new ConstructorProvider<>(type, constructor));
+        dependencies.put(type, stream(constructor.getParameters()).map(Parameter::getType).collect(Collectors.toList()));
     }
 
     public Context getContext() {
+        for (Class<?> c : dependencies.keySet()) {
+            for (Class<?> d : dependencies.get(c)) {
+                if (!dependencies.containsKey(d))
+                    throw new DependencyNotFoundException(c, d);
+            }
+        }
         return new Context() {
             @Override
             public <T> Optional<T> get(Class<T> type) {
