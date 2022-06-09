@@ -91,7 +91,8 @@ public class ContainerTest {
             public void should_throw_exception_if_dependency_not_found() {
                 context.bind(Component.class, ComponentWithInjectConstructor.class);
 
-                assertThrows(DependencyNotFoundException.class, () -> context.get(Component.class));
+                DependencyNotFoundException exception = assertThrows(DependencyNotFoundException.class, () -> context.get(Component.class));
+                assertEquals(Dependency.class, exception.getDependency());
             }
 
             @Test

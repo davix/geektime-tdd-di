@@ -44,7 +44,7 @@ public class Context {
             try {
                 constructing = true;
                 Object[] dependencies = stream(constructor.getParameters())
-                        .map(p -> Context.this.get(p.getType()).orElseThrow(DependencyNotFoundException::new))
+                        .map(p -> Context.this.get(p.getType()).orElseThrow(() -> new DependencyNotFoundException(p.getType())))
                         .toArray(Object[]::new);
                 return (T) constructor.newInstance(dependencies);
             } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
