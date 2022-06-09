@@ -23,16 +23,32 @@ public class Context {
     public <T, Impl extends T> void bind(Class<T> type, Class<Impl> implementation) {
         Constructor<Impl> constructor = getConstructor(implementation);
 
-        providers.put(type, (Provider<T>) () -> {
+        providers.put(type, new ConstructorProvider<>(constructor));
+    }
+
+    class ConstructorProvider<T> implements Provider<T> {
+        private Constructor<T> constructor;
+        private boolean constructing = false;
+
+        public ConstructorProvider(Constructor<T> constructor) {
+            this.constructor = constructor;
+        }
+
+        @Override
+        public T get() {
+            if (constructing) throw new CyclicDependenciesFound();
             try {
+                constructing = true;
                 Object[] dependencies = stream(constructor.getParameters())
-                        .map(p -> get(p.getType()).orElseThrow(DependencyNotFoundException::new))
+                        .map(p -> Context.this.get(p.getType()).orElseThrow(DependencyNotFoundException::new))
                         .toArray(Object[]::new);
                 return (T) constructor.newInstance(dependencies);
             } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
                 throw new RuntimeException(e);
+            } finally {
+                constructing = false;
             }
-        });
+        }
     }
 
     private <T> Constructor<T> getConstructor(Class<T> implementation) {
