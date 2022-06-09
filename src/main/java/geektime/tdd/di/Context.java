@@ -7,6 +7,7 @@ import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.stream;
@@ -24,7 +25,7 @@ public class Context {
         providers.put(type, (Provider<T>) () -> {
             try {
                 Object[] dependencies = stream(constructor.getParameters())
-                        .map(p -> get(p.getType()))
+                        .map(p -> get(p.getType()).orElseThrow(DependencyNotFoundException::new))
                         .toArray(Object[]::new);
                 return (T) constructor.newInstance(dependencies);
             } catch (Exception e) {
@@ -48,7 +49,8 @@ public class Context {
                 });
     }
 
-    public <T> T get(Class<T> type) {
-        return (T) providers.get(type).get();
+    public <T> Optional<T> get(Class<T> type) {
+        return Optional.ofNullable(providers.get(type)).map(p -> (T) p.get());
     }
+
 }
