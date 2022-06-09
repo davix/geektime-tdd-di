@@ -23,7 +23,7 @@ public class Context {
     public <T, Impl extends T> void bind(Class<T> type, Class<Impl> implementation) {
         Constructor<Impl> constructor = getConstructor(implementation);
 
-        providers.put(type, new ConstructorProvider<>(constructor));
+        providers.put(type, new ConstructorProvider<>(type, constructor));
     }
 
     public <T> Optional<T> get(Class<T> type) {
@@ -31,10 +31,12 @@ public class Context {
     }
 
     class ConstructorProvider<T> implements Provider<T> {
+        private Class<?> type;
         private Constructor<T> constructor;
         private boolean constructing = false;
 
-        public ConstructorProvider(Constructor<T> constructor) {
+        public ConstructorProvider(Class<?> type, Constructor<T> constructor) {
+            this.type = type;
             this.constructor = constructor;
         }
 
@@ -44,7 +46,7 @@ public class Context {
             try {
                 constructing = true;
                 Object[] dependencies = stream(constructor.getParameters())
-                        .map(p -> Context.this.get(p.getType()).orElseThrow(() -> new DependencyNotFoundException(p.getType())))
+                        .map(p -> Context.this.get(p.getType()).orElseThrow(() -> new DependencyNotFoundException(type, p.getType())))
                         .toArray(Object[]::new);
                 return (T) constructor.newInstance(dependencies);
             } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
