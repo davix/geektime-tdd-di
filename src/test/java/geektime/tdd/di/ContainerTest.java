@@ -4,8 +4,12 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.internal.util.collections.Sets;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -110,7 +114,11 @@ public class ContainerTest {
                 context.bind(Component.class, ComponentWithInjectConstructor.class);
                 context.bind(Dependency.class, DependencyDependedOnComponent.class);
 
-                assertThrows(CyclicDependenciesFound.class, () -> context.get(Component.class));
+                CyclicDependenciesFound exception = assertThrows(CyclicDependenciesFound.class, () -> context.get(Component.class));
+                Set<Class<?>> classes = Sets.newSet(exception.getComponents());
+                assertEquals(2, classes.size());
+                assertTrue(classes.contains(Component.class));
+                assertTrue(classes.contains(Dependency.class));
             }
 
             @Test
@@ -119,7 +127,13 @@ public class ContainerTest {
                 context.bind(Dependency.class, DependencyDependedOnAnotherDependency.class);
                 context.bind(AnotherDependency.class, AnotherDependencyDependedOnComponent.class);
 
-                assertThrows(CyclicDependenciesFound.class, () -> context.get(Component.class));
+                CyclicDependenciesFound exception = assertThrows(CyclicDependenciesFound.class, () -> context.get(Component.class));
+
+                List<Class<?>> classes = Arrays.asList(exception.getComponents());
+                assertEquals(3, classes.size());
+                assertTrue(classes.contains(Component.class));
+                assertTrue(classes.contains(Dependency.class));
+                assertTrue(classes.contains(AnotherDependency.class));
             }
         }
 
