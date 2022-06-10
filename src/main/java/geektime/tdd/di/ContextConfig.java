@@ -5,10 +5,7 @@ import jakarta.inject.Inject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Parameter;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -35,10 +32,7 @@ public class ContextConfig {
 
     public Context getContext() {
         for (Class<?> c : dependencies.keySet()) {
-            for (Class<?> d : dependencies.get(c)) {
-                if (!dependencies.containsKey(d))
-                    throw new DependencyNotFoundException(c, d);
-            }
+            checkDependencies(c, new Stack<>());
         }
         return new Context() {
             @Override
@@ -46,6 +40,18 @@ public class ContextConfig {
                 return Optional.ofNullable(providers.get(type)).map(p -> (T) p.get(this));
             }
         };
+    }
+
+    private void checkDependencies(Class<?> c, Stack<Class<?>> visiting) {
+        for (Class<?> d : dependencies.get(c)) {
+            if (!dependencies.containsKey(d))
+                throw new DependencyNotFoundException(c, d);
+            if (visiting.contains(d))
+                throw new CyclicDependenciesFound(visiting);
+            visiting.push(d);
+            checkDependencies(d, visiting);
+            visiting.pop();
+        }
     }
 
     class ConstructorProvider<T> implements Provider<T> {
