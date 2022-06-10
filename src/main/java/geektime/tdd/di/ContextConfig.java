@@ -31,9 +31,7 @@ public class ContextConfig {
     }
 
     public Context getContext() {
-        for (Class<?> c : dependencies.keySet()) {
-            checkDependencies(c, new Stack<>());
-        }
+        dependencies.keySet().forEach(c -> checkDependencies(c, new Stack<>()));
         return new Context() {
             @Override
             public <T> Optional<T> get(Class<T> type) {
@@ -57,7 +55,6 @@ public class ContextConfig {
     class ConstructorProvider<T> implements Provider<T> {
         private Class<?> type;
         private Constructor<T> constructor;
-        private boolean constructing = false;
 
         public ConstructorProvider(Class<?> type, Constructor<T> constructor) {
             this.type = type;
@@ -66,19 +63,13 @@ public class ContextConfig {
 
         @Override
         public T get(Context context) {
-            if (constructing) throw new CyclicDependenciesFound(type);
             try {
-                constructing = true;
                 Object[] dependencies = stream(constructor.getParameters())
-                        .map(p -> context.get(p.getType()).orElseThrow(() -> new DependencyNotFoundException(type, p.getType())))
+                        .map(p -> context.get(p.getType()).get())
                         .toArray(Object[]::new);
                 return (T) constructor.newInstance(dependencies);
-            } catch (CyclicDependenciesFound e) {
-                throw new CyclicDependenciesFound(type, e);
             } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
                 throw new RuntimeException(e);
-            } finally {
-                constructing = false;
             }
         }
     }
