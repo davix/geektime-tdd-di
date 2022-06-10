@@ -8,30 +8,39 @@ import java.lang.reflect.Parameter;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 
 public class ContextConfig {
     private Map<Class<?>, Provider<?>> providers = new HashMap<>();
-    private Map<Class<?>, List<Class<?>>> dependencies = new HashMap<>();
 
     interface Provider<T> {
         T get(Context context);
+
+        List<Class<?>> getDependencies();
     }
 
     public <T> void bind(Class<T> type, T instance) {
-        providers.put(type, (Provider<T>) context -> instance);
-        dependencies.put(type, asList());
+        providers.put(type, new Provider<T>() {
+
+            @Override
+            public T get(Context context) {
+                return instance;
+            }
+
+            @Override
+            public List<Class<?>> getDependencies() {
+                return List.of();
+            }
+        });
     }
 
     public <T, Impl extends T> void bind(Class<T> type, Class<Impl> implementation) {
         Constructor<Impl> constructor = getConstructor(implementation);
         providers.put(type, new ConstructorProvider<>(type, constructor));
-        dependencies.put(type, stream(constructor.getParameters()).map(Parameter::getType).collect(Collectors.toList()));
     }
 
     public Context getContext() {
-        dependencies.keySet().forEach(c -> checkDependencies(c, new Stack<>()));
+        providers.keySet().forEach(c -> checkDependencies(c, new Stack<>()));
         return new Context() {
             @Override
             public <T> Optional<T> get(Class<T> type) {
@@ -41,8 +50,8 @@ public class ContextConfig {
     }
 
     private void checkDependencies(Class<?> c, Stack<Class<?>> visiting) {
-        for (Class<?> d : dependencies.get(c)) {
-            if (!dependencies.containsKey(d))
+        for (Class<?> d : providers.get(c).getDependencies()) {
+            if (!providers.containsKey(d))
                 throw new DependencyNotFoundException(c, d);
             if (visiting.contains(d))
                 throw new CyclicDependenciesFound(visiting);
@@ -72,9 +81,14 @@ public class ContextConfig {
                 throw new RuntimeException(e);
             }
         }
+
+        @Override
+        public List<Class<?>> getDependencies() {
+            return stream(constructor.getParameters()).map(Parameter::getType).collect(Collectors.toList());
+        }
     }
 
-    private <T> Constructor<T> getConstructor(Class<T> implementation) {
+    private static <T> Constructor<T> getConstructor(Class<T> implementation) {
         List<Constructor<?>> constructors = stream(implementation.getConstructors())
                 .filter(c -> c.isAnnotationPresent(Inject.class)).collect(Collectors.toList());
         if (constructors.size() > 1) throw new IllegalComponentException();
