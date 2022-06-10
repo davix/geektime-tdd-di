@@ -35,8 +35,7 @@ public class ContextConfig {
     }
 
     public <T, Impl extends T> void bind(Class<T> type, Class<Impl> implementation) {
-        Constructor<Impl> constructor = getConstructor(implementation);
-        providers.put(type, new ConstructorProvider<>(type, constructor));
+        providers.put(type, new ConstructorProvider<>(implementation));
     }
 
     public Context getContext() {
@@ -62,12 +61,25 @@ public class ContextConfig {
     }
 
     class ConstructorProvider<T> implements Provider<T> {
-        private Class<?> type;
         private Constructor<T> constructor;
 
-        public ConstructorProvider(Class<?> type, Constructor<T> constructor) {
-            this.type = type;
-            this.constructor = constructor;
+        public ConstructorProvider(Class<T> component) {
+            this.constructor = getConstructor(component);
+        }
+
+        private static <T> Constructor<T> getConstructor(Class<T> implementation) {
+            List<Constructor<?>> constructors = stream(implementation.getConstructors())
+                    .filter(c -> c.isAnnotationPresent(Inject.class)).collect(Collectors.toList());
+            if (constructors.size() > 1) throw new IllegalComponentException();
+
+            return (Constructor<T>) constructors.stream()
+                    .findFirst().orElseGet(() -> {
+                        try {
+                            return implementation.getConstructor();
+                        } catch (Exception e) {
+                            throw new IllegalComponentException();
+                        }
+                    });
         }
 
         @Override
@@ -88,18 +100,4 @@ public class ContextConfig {
         }
     }
 
-    private static <T> Constructor<T> getConstructor(Class<T> implementation) {
-        List<Constructor<?>> constructors = stream(implementation.getConstructors())
-                .filter(c -> c.isAnnotationPresent(Inject.class)).collect(Collectors.toList());
-        if (constructors.size() > 1) throw new IllegalComponentException();
-
-        return (Constructor<T>) constructors.stream()
-                .findFirst().orElseGet(() -> {
-                    try {
-                        return implementation.getConstructor();
-                    } catch (Exception e) {
-                        throw new IllegalComponentException();
-                    }
-                });
-    }
 }
