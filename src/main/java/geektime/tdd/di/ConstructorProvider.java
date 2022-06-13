@@ -20,9 +20,17 @@ class ConstructorProvider<T> implements ContextConfig.Provider<T> {
     private List<Method> methods;
 
     public ConstructorProvider(Class<T> component) {
+        if (Modifier.isAbstract(component.getModifiers()))
+            throw new IllegalComponentException();
+
         this.constructor = getConstructor(component);
         this.fields = getFields(component);
         this.methods = getMethods(component);
+
+        if (fields.stream().anyMatch(f -> Modifier.isFinal(f.getModifiers())))
+            throw new IllegalComponentException();
+        if (methods.stream().anyMatch(m -> m.getTypeParameters().length != 0))
+            throw new IllegalComponentException();
     }
 
     @Override

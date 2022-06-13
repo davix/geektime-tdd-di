@@ -77,6 +77,22 @@ public class ContainerTest {
                 assertEquals(dependency2, ((DependencyWithInjectConstructor) dependency1).getDependency());
             }
 
+            abstract class AbstractComponent {
+                @Inject
+                public AbstractComponent() {
+                }
+            }
+
+            @Test
+            public void should_throw_exception_if_component_is_abstraction() {
+                assertThrows(IllegalComponentException.class, () -> new ConstructorProvider<>(AbstractComponent.class));
+            }
+
+            @Test
+            public void should_throw_exception_if_component_is_interface() {
+                assertThrows(IllegalComponentException.class, () -> new ConstructorProvider<>(Component.class));
+            }
+
             @Test
             public void should_throw_exception_if_multi_inject_constructors_provided() {
                 assertThrows(IllegalComponentException.class, () -> {
@@ -167,6 +183,16 @@ public class ContainerTest {
 
                 SubclassWithFieldInjection component = config.getContext().get(SubclassWithFieldInjection.class).get();
                 assertSame(dependency, component.dependency);
+            }
+
+            static class FinalInjectField {
+                @Inject
+                final Dependency dependency = null;
+            }
+
+            @Test
+            public void should_throw_exception_if_inject_field_is_final() {
+                assertThrows(IllegalComponentException.class, () -> new ConstructorProvider<>(FinalInjectField.class));
             }
 
             @Test
@@ -275,6 +301,16 @@ public class ContainerTest {
             }
         }
 
+        static class InjectMethodWithTypeParameter {
+            @Inject
+            <T> void install() {
+            }
+        }
+
+        @Test
+        public void should_throw_exception_if_inject_method_has_type_parameter() {
+            assertThrows(IllegalComponentException.class, () -> new ConstructorProvider<>(InjectMethodWithTypeParameter.class));
+        }
     }
 
     @Nested
