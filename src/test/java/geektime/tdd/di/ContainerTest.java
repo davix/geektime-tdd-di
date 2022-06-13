@@ -2,7 +2,6 @@ package geektime.tdd.di;
 
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.internal.util.collections.Sets;
@@ -157,14 +156,6 @@ public class ContainerTest {
             }
 
             @Test
-            @Disabled
-            public void should_throw_exception_when_field_dependency_missing() {
-                config.bind(ComponentWithFieldInjection.class, ComponentWithFieldInjection.class);
-                assertThrows(DependencyNotFoundException.class, () -> config.getContext());
-            }
-
-            @Test
-            @Disabled
             public void should_include_field_dependency_in_dependencies() {
                 ConstructorProvider<ComponentWithFieldInjection> provider = new ConstructorProvider<>(ComponentWithFieldInjection.class);
                 assertArrayEquals(new Class<?>[]{Dependency.class}, provider.getDependencies().toArray(Class<?>[]::new));

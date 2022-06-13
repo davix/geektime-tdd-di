@@ -8,6 +8,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Parameter;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Arrays.stream;
 
@@ -39,7 +40,8 @@ class ConstructorProvider<T> implements ContextConfig.Provider<T> {
 
     @Override
     public List<Class<?>> getDependencies() {
-        return stream(constructor.getParameters()).map(Parameter::getType).collect(Collectors.toList());
+        return Stream.concat(stream(constructor.getParameters()).map(Parameter::getType),
+                fields.stream().map(Field::getType)).toList();
     }
 
     private static <T> List<Field> getFields(Class<T> component) {
