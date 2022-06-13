@@ -214,6 +214,47 @@ public class ContainerTest {
                 assertSame(dependency, component.dependency);
             }
 
+            static class SuperclassWithInjectMethod {
+                int supperCalled = 0;
+
+                @Inject
+                void install() {
+                    this.supperCalled++;
+                }
+            }
+
+            static class SubclassWithInjectMethod extends SuperclassWithInjectMethod {
+                int subCalled = 0;
+
+                @Inject
+                void installAnother() {
+                    this.subCalled = supperCalled + 1;
+                }
+            }
+
+            @Test
+            public void should_inject_dependencies_via_inject_from_superclass() {
+                config.bind(SuperclassWithInjectMethod.class, SuperclassWithInjectMethod.class);
+                config.bind(SubclassWithInjectMethod.class, SubclassWithInjectMethod.class);
+                SubclassWithInjectMethod component = config.getContext().get(SubclassWithInjectMethod.class).get();
+                assertEquals(1, component.supperCalled);
+                assertEquals(2, component.subCalled);
+            }
+
+            static class SubclassOverrideSuperclassWithInject extends SuperclassWithInjectMethod {
+                @Inject
+                void install() {
+                    super.install();
+                }
+            }
+
+            @Test
+            public void should_only_call_once_if_subclass_override_inject_method_with_inject() {
+                config.bind(SubclassOverrideSuperclassWithInject.class, SubclassOverrideSuperclassWithInject.class);
+                SubclassOverrideSuperclassWithInject component = config.getContext().get(SubclassOverrideSuperclassWithInject.class).get();
+                assertEquals(1, component.supperCalled);
+            }
+
             @Test
             public void should_include_method_dependency_in_dependencies() {
                 ConstructorProvider<InjectMethodWithDependency> provider = new ConstructorProvider<>(InjectMethodWithDependency.class);

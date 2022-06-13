@@ -4,6 +4,8 @@ import jakarta.inject.Inject;
 
 import java.lang.reflect.*;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -60,7 +62,11 @@ class ConstructorProvider<T> implements ContextConfig.Provider<T> {
     private static <T> List<Method> getMethods(Class<T> component) {
         List<Method> methods = new ArrayList<>();
         for (Class<?> cur = component; cur != Object.class; cur = cur.getSuperclass())
-            methods.addAll(stream(cur.getDeclaredMethods()).filter(m -> m.isAnnotationPresent(Inject.class)).toList());
+            methods.addAll(stream(cur.getDeclaredMethods()).filter(m -> m.isAnnotationPresent(Inject.class))
+                    .filter(m -> methods.stream().noneMatch(o -> o.getName().equals(m.getName()) &&
+                            Arrays.equals(o.getParameterTypes(), m.getParameterTypes())))
+                    .toList());
+        Collections.reverse(methods);
         return methods;
     }
 
