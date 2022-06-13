@@ -174,16 +174,45 @@ public class ContainerTest {
                 ConstructorProvider<ComponentWithFieldInjection> provider = new ConstructorProvider<>(ComponentWithFieldInjection.class);
                 assertArrayEquals(new Class<?>[]{Dependency.class}, provider.getDependencies().toArray(Class<?>[]::new));
             }
-
-            class DependencyWithFieldInjection implements Dependency {
-                @Inject
-                ComponentWithFieldInjection component;
-            }
         }
 
         @Nested
         public class MethodInjection {
+            static class InjectMethodWithNoDependency {
+                boolean called = false;
 
+                @Inject
+                void install() {
+                    this.called = true;
+                }
+            }
+
+            @Test
+            public void should_call_inject_method_even_if_no_dependency_declared() {
+                config.bind(InjectMethodWithNoDependency.class, InjectMethodWithNoDependency.class);
+                InjectMethodWithNoDependency component = config.getContext().get(InjectMethodWithNoDependency.class).get();
+                assertTrue(component.called);
+            }
+
+            static class InjectMethodWithDependency {
+                private Dependency dependency;
+
+                @Inject
+                public void install(Dependency dependency) {
+                    this.dependency = dependency;
+                }
+            }
+
+            @Test
+            public void should_inject_dependency_via_method() {
+                Dependency dependency = new Dependency() {
+                };
+                config.bind(Dependency.class, dependency);
+                config.bind(InjectMethodWithDependency.class, InjectMethodWithDependency.class);
+
+                InjectMethodWithDependency component = config.getContext().get(InjectMethodWithDependency.class).get();
+                assertSame(dependency, component.dependency);
+            }
         }
 
     }
