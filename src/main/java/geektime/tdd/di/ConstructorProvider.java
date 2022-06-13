@@ -3,6 +3,7 @@ package geektime.tdd.di;
 import jakarta.inject.Inject;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Parameter;
 import java.util.List;
@@ -12,9 +13,37 @@ import static java.util.Arrays.stream;
 
 class ConstructorProvider<T> implements ContextConfig.Provider<T> {
     private Constructor<T> constructor;
+    private List<Field> fields;
 
     public ConstructorProvider(Class<T> component) {
         this.constructor = getConstructor(component);
+        this.fields = getFields(component);
+    }
+
+    @Override
+    public T get(Context context) {
+        try {
+            Object[] dependencies = stream(constructor.getParameters())
+                    .map(p -> context.get(p.getType()).get())
+                    .toArray(Object[]::new);
+            T instance = constructor.newInstance(dependencies);
+            for (Field f : fields) {
+                f.set(instance, context.get(f.getType()).get());
+            }
+//            fields.forEach(f -> f.set(instance, context.get(f.getType())).get());
+            return instance;
+        } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public List<Class<?>> getDependencies() {
+        return stream(constructor.getParameters()).map(Parameter::getType).collect(Collectors.toList());
+    }
+
+    private static <T> List<Field> getFields(Class<T> component) {
+        return stream(component.getDeclaredFields()).filter(f -> f.isAnnotationPresent(Inject.class)).toList();
     }
 
     private static <T> Constructor<T> getConstructor(Class<T> implementation) {
@@ -25,27 +54,10 @@ class ConstructorProvider<T> implements ContextConfig.Provider<T> {
         return (Constructor<T>) constructors.stream()
                 .findFirst().orElseGet(() -> {
                     try {
-                        return implementation.getConstructor();
+                        return implementation.getDeclaredConstructor();
                     } catch (Exception e) {
                         throw new IllegalComponentException();
                     }
                 });
-    }
-
-    @Override
-    public T get(Context context) {
-        try {
-            Object[] dependencies = stream(constructor.getParameters())
-                    .map(p -> context.get(p.getType()).get())
-                    .toArray(Object[]::new);
-            return (T) constructor.newInstance(dependencies);
-        } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public List<Class<?>> getDependencies() {
-        return stream(constructor.getParameters()).map(Parameter::getType).collect(Collectors.toList());
     }
 }

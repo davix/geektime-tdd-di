@@ -2,6 +2,7 @@ package geektime.tdd.di;
 
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.internal.util.collections.Sets;
@@ -139,7 +140,40 @@ public class ContainerTest {
 
         @Nested
         public class FieldInjection {
+            static class ComponentWithFieldInjection {
+                @Inject
+                Dependency dependency;
+            }
 
+            @Test
+            public void should_inject_dependency_via_field() {
+                Dependency dependency = new Dependency() {
+                };
+                config.bind(Dependency.class, dependency);
+                config.bind(ComponentWithFieldInjection.class, ComponentWithFieldInjection.class);
+
+                ComponentWithFieldInjection component = config.getContext().get(ComponentWithFieldInjection.class).get();
+                assertSame(dependency, component.dependency);
+            }
+
+            @Test
+            @Disabled
+            public void should_throw_exception_when_field_dependency_missing() {
+                config.bind(ComponentWithFieldInjection.class, ComponentWithFieldInjection.class);
+                assertThrows(DependencyNotFoundException.class, () -> config.getContext());
+            }
+
+            @Test
+            @Disabled
+            public void should_include_field_dependency_in_dependencies() {
+                ConstructorProvider<ComponentWithFieldInjection> provider = new ConstructorProvider<>(ComponentWithFieldInjection.class);
+                assertArrayEquals(new Class<?>[]{Dependency.class}, provider.getDependencies().toArray(Class<?>[]::new));
+            }
+
+            class DependencyWithFieldInjection implements Dependency {
+                @Inject
+                ComponentWithFieldInjection component;
+            }
         }
 
         @Nested
