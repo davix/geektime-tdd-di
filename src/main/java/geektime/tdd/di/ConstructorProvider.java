@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -63,11 +64,17 @@ class ConstructorProvider<T> implements ContextConfig.Provider<T> {
         List<Method> methods = new ArrayList<>();
         for (Class<?> cur = component; cur != Object.class; cur = cur.getSuperclass())
             methods.addAll(stream(cur.getDeclaredMethods()).filter(m -> m.isAnnotationPresent(Inject.class))
-                    .filter(m -> methods.stream().noneMatch(o -> o.getName().equals(m.getName()) &&
-                            Arrays.equals(o.getParameterTypes(), m.getParameterTypes())))
+                    .filter(m -> methods.stream().noneMatch(isSameMethod(m)))
+                    .filter(m -> stream(component.getDeclaredMethods()).filter(m1 -> !m1.isAnnotationPresent(Inject.class))
+                            .noneMatch(isSameMethod(m)))
                     .toList());
         Collections.reverse(methods);
         return methods;
+    }
+
+    private static Predicate<Method> isSameMethod(Method m) {
+        return o -> o.getName().equals(m.getName()) &&
+                Arrays.equals(o.getParameterTypes(), m.getParameterTypes());
     }
 
     private static <T> Constructor<T> getConstructor(Class<T> implementation) {
