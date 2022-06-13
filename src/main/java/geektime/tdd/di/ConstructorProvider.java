@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.stream;
+import static java.util.stream.Stream.concat;
 
 class ConstructorProvider<T> implements ContextConfig.Provider<T> {
     private Constructor<T> constructor;
@@ -43,8 +44,10 @@ class ConstructorProvider<T> implements ContextConfig.Provider<T> {
 
     @Override
     public List<Class<?>> getDependencies() {
-        return Stream.concat(stream(constructor.getParameters()).map(Parameter::getType),
-                fields.stream().map(Field::getType)).toList();
+        Stream<Class<?>> fromCons = stream(constructor.getParameters()).map(Parameter::getType);
+        Stream<Class<?>> fromField = fields.stream().map(Field::getType);
+        Stream<Class<?>> fromMethod = methods.stream().flatMap(m -> stream(m.getParameterTypes()));
+        return concat(concat(fromCons, fromField), fromMethod).toList();
     }
 
     private static <T> List<Field> getFields(Class<T> component) {
