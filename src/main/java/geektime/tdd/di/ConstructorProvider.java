@@ -6,6 +6,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Parameter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -45,7 +46,10 @@ class ConstructorProvider<T> implements ContextConfig.Provider<T> {
     }
 
     private static <T> List<Field> getFields(Class<T> component) {
-        return stream(component.getDeclaredFields()).filter(f -> f.isAnnotationPresent(Inject.class)).toList();
+        List<Field> fields = new ArrayList<>();
+        for (Class<?> cur = component; cur != Object.class; cur = cur.getSuperclass())
+            fields.addAll(stream(cur.getDeclaredFields()).filter(f -> f.isAnnotationPresent(Inject.class)).toList());
+        return fields;
     }
 
     private static <T> Constructor<T> getConstructor(Class<T> implementation) {
