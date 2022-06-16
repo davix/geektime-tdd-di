@@ -8,26 +8,17 @@ public class ContextConfig {
     interface Provider<T> {
         T get(Context context);
 
-        List<Class<?>> getDependencies();
+        default List<Class<?>> getDependencies() {
+            return List.of();
+        }
     }
 
     public <T> void bind(Class<T> type, T instance) {
-        providers.put(type, new Provider<T>() {
-
-            @Override
-            public T get(Context context) {
-                return instance;
-            }
-
-            @Override
-            public List<Class<?>> getDependencies() {
-                return List.of();
-            }
-        });
+        providers.put(type, (Provider<T>) context -> instance);
     }
 
     public <T, Impl extends T> void bind(Class<T> type, Class<Impl> implementation) {
-        providers.put(type, new ConstructorProvider<>(implementation));
+        providers.put(type, new InjectionProvider<>(implementation));
     }
 
     public Context getContext() {

@@ -14,12 +14,12 @@ import java.util.stream.Stream;
 import static java.util.Arrays.stream;
 import static java.util.stream.Stream.concat;
 
-class ConstructorProvider<T> implements ContextConfig.Provider<T> {
+class InjectionProvider<T> implements ContextConfig.Provider<T> {
     private Constructor<T> constructor;
     private List<Field> fields;
     private List<Method> methods;
 
-    public ConstructorProvider(Class<T> component) {
+    public InjectionProvider(Class<T> component) {
         if (Modifier.isAbstract(component.getModifiers()))
             throw new IllegalComponentException();
 
