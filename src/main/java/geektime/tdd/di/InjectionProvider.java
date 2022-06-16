@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -50,28 +51,21 @@ class InjectionProvider<T> implements ContextConfig.Provider<T> {
 
     @Override
     public List<Class<?>> getDependencies() {
-        Stream<Class<?>> fromCons = stream(constructor.getParameters()).map(Parameter::getType);
+        Stream<Class<?>> fromCons = stream(constructor.getParameterTypes());
         Stream<Class<?>> fromField = fields.stream().map(Field::getType);
         Stream<Class<?>> fromMethod = methods.stream().flatMap(m -> stream(m.getParameterTypes()));
         return concat(concat(fromCons, fromField), fromMethod).toList();
     }
 
     private static <T> List<Field> getFields(Class<T> component) {
-        List<Field> fields = new ArrayList<>();
-        for (Class<?> cur = component; cur != Object.class; cur = cur.getSuperclass()) {
-            fields.addAll(injectable(cur.getDeclaredFields()).toList());
-        }
-        return fields;
+        return traverse(component, (fields, cur) -> injectable(cur.getDeclaredFields()).toList());
     }
 
     private static <T> List<Method> getMethods(Class<T> component) {
-        List<Method> methods = new ArrayList<>();
-        for (Class<?> cur = component; cur != Object.class; cur = cur.getSuperclass()) {
-            methods.addAll(injectable(cur.getDeclaredMethods())
-                    .filter(m -> isOverrideByInjectMethod(methods, m))
-                    .filter(m -> isOverrideByNoInjectMethod(component, m))
-                    .toList());
-        }
+        List<Method> methods = traverse(component, (ms, cur) -> injectable(cur.getDeclaredMethods())
+                .filter(m -> isOverrideByInjectMethod(ms, m))
+                .filter(m -> isOverrideByNoInjectMethod(component, m))
+                .toList());
         Collections.reverse(methods);
         return methods;
     }
@@ -90,6 +84,14 @@ class InjectionProvider<T> implements ContextConfig.Provider<T> {
         } catch (Exception e) {
             throw new IllegalComponentException();
         }
+    }
+
+    private static <T> List<T> traverse(Class<?> component, BiFunction<List<T>, Class<?>, List<T>> finder) {
+        List<T> members = new ArrayList<>();
+        for (Class<?> cur = component; cur != Object.class; cur = cur.getSuperclass()) {
+            members.addAll(finder.apply(members, cur));
+        }
+        return members;
     }
 
     private static <T extends AnnotatedElement> Stream<T> injectable(T[] elements) {
