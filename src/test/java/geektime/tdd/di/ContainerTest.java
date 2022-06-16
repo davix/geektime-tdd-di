@@ -2,14 +2,19 @@ package geektime.tdd.di;
 
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.internal.util.collections.Sets;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -23,19 +28,87 @@ public class ContainerTest {
 
     @Nested
     public class ComponentConstruction {
-        @Test
-        public void should_bind_to_a_specific_instance() {
-            Component instance = new Component() {
-            };
-            config.bind(Component.class, instance);
+        @Nested
+        public class TypeBinding {
+            @Test
+            public void should_bind_to_a_specific_instance() {
+                Component instance = new Component() {
+                    @Override
+                    public Dependency dependency() {
+                        return null;
+                    }
+                };
+                config.bind(Component.class, instance);
 
-            assertSame(instance, config.getContext().get(Component.class).get());
-        }
+                assertSame(instance, config.getContext().get(Component.class).get());
+            }
 
-        @Test
-        public void should_return_empty_if_no_component_defined() {
-            Optional<Component> component = config.getContext().get(Component.class);
-            assertTrue(component.isEmpty());
+            @Test
+            public void should_return_empty_if_no_component_defined() {
+                Optional<Component> component = config.getContext().get(Component.class);
+                assertTrue(component.isEmpty());
+            }
+
+            @ParameterizedTest(name = "supporting {0}")
+            @MethodSource
+            public void should_bind_type_to_an_injectable_component(Class<? extends Component> type) {
+                Dependency dependency = new Dependency() {
+                };
+                config.bind(Dependency.class, dependency);
+                config.bind(Component.class, type);
+
+                Optional<Component> component = config.getContext().get(Component.class);
+                assertTrue(component.isPresent());
+                assertSame(dependency, component.get().dependency());
+            }
+
+            public static Stream<Arguments> should_bind_type_to_an_injectable_component() {
+                return Stream.of(Arguments.of(Named.of("constructor injection", ConstructorInjection.class)),
+                        Arguments.of(Named.of("field injection", FieldInjection.class)),
+                        Arguments.of(Named.of("method injection", MethodInjection.class)));
+            }
+
+            interface Component {
+                Dependency dependency();
+            }
+
+            static class ConstructorInjection implements Component {
+                Dependency dependency;
+
+                @Inject
+                public ConstructorInjection(Dependency dependency) {
+                    this.dependency = dependency;
+                }
+
+                @Override
+                public Dependency dependency() {
+                    return dependency;
+                }
+            }
+
+            static class FieldInjection implements Component {
+                @Inject
+                Dependency dependency;
+
+                @Override
+                public Dependency dependency() {
+                    return dependency;
+                }
+            }
+
+            static class MethodInjection implements Component {
+                Dependency dependency;
+
+                @Inject
+                public void install(Dependency dependency) {
+                    this.dependency = dependency;
+                }
+
+                @Override
+                public Dependency dependency() {
+                    return dependency;
+                }
+            }
         }
 
         @Nested
