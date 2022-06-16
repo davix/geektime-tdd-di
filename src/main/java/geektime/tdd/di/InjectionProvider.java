@@ -35,16 +35,12 @@ class InjectionProvider<T> implements ContextConfig.Provider<T> {
     @Override
     public T get(Context context) {
         try {
-            Object[] dependencies = stream(constructor.getParameters())
-                    .map(p -> context.get(p.getType()).get())
-                    .toArray(Object[]::new);
-            T instance = constructor.newInstance(dependencies);
+            T instance = constructor.newInstance(toDependencies(context, constructor));
             for (Field f : fields) {
-                f.set(instance, context.get(f.getType()).get());
+                f.set(instance, toDependency(context, f));
             }
-//            fields.forEach(f -> f.set(instance, context.get(f.getType())).get());
             for (Method m : methods) {
-                m.invoke(instance, stream(m.getParameterTypes()).map(t -> context.get(t).get()).toArray(Object[]::new));
+                m.invoke(instance, toDependencies(context, m));
             }
             return instance;
         } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
@@ -85,13 +81,15 @@ class InjectionProvider<T> implements ContextConfig.Provider<T> {
         if (constructors.size() > 1) throw new IllegalComponentException();
 
         return (Constructor<T>) constructors.stream()
-                .findFirst().orElseGet(() -> {
-                    try {
-                        return implementation.getDeclaredConstructor();
-                    } catch (Exception e) {
-                        throw new IllegalComponentException();
-                    }
-                });
+                .findFirst().orElseGet(() -> defaultConstructor(implementation));
+    }
+
+    private static <T> Constructor<T> defaultConstructor(Class<T> implementation) {
+        try {
+            return implementation.getDeclaredConstructor();
+        } catch (Exception e) {
+            throw new IllegalComponentException();
+        }
     }
 
     private static <T extends AnnotatedElement> Stream<T> injectable(T[] elements) {
@@ -110,6 +108,16 @@ class InjectionProvider<T> implements ContextConfig.Provider<T> {
     private static Predicate<Method> isSameMethod(Method m) {
         return o -> o.getName().equals(m.getName()) &&
                 Arrays.equals(o.getParameterTypes(), m.getParameterTypes());
+    }
+
+    private static Object[] toDependencies(Context context, Executable executable) {
+        return stream(executable.getParameterTypes())
+                .map(t -> context.get(t).get())
+                .toArray(Object[]::new);
+    }
+
+    private Object toDependency(Context context, Field f) {
+        return context.get(f.getType()).get();
     }
 
 }
