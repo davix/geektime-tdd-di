@@ -10,10 +10,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.internal.util.collections.Sets;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -114,24 +111,102 @@ public class ContainerTest {
         @Nested
         public class DependencyCheck {
 
-            @Test
-            public void should_throw_exception_if_dependency_not_found() {
-                config.bind(Component.class, ComponentWithInjectConstructor.class);
+            @ParameterizedTest
+            @MethodSource
+            public void should_throw_exception_if_dependency_not_found(Class<? extends Component> component) {
+                config.bind(Component.class, component);
 
                 DependencyNotFoundException exception = assertThrows(DependencyNotFoundException.class, () -> config.getContext());
                 assertEquals(Dependency.class, exception.getDependency());
+                assertEquals(Component.class, exception.getComponent());
             }
 
-            @Test
-            public void should_throw_exception_if_cyclic_dependencies_found() {
-                config.bind(Component.class, ComponentWithInjectConstructor.class);
-                config.bind(Dependency.class, DependencyDependedOnComponent.class);
+            public static Stream<Arguments> should_throw_exception_if_dependency_not_found() {
+                return Stream.of(Arguments.of(Named.of("Inject Constructor", MissingDependencyConstructor.class)),
+                        Arguments.of(Named.of("Inject Field", MissingDependencyField.class)),
+                        Arguments.of(Named.of("Inject Method", MissingDependencyMethod.class)));
+            }
+
+            static class MissingDependencyConstructor implements Component {
+                @Inject
+                public MissingDependencyConstructor(Dependency dependency) {
+                }
+            }
+
+            static class MissingDependencyField implements Component {
+                @Inject
+                private Dependency dependency;
+            }
+
+            static class MissingDependencyMethod implements Component {
+                @Inject
+                void install(Dependency dependency) {
+                }
+            }
+
+            @ParameterizedTest(name = "cyclic dependency between {0} and {1}")
+            @MethodSource
+            public void should_throw_exception_if_cyclic_dependencies_found(Class<? extends Component> component,
+                                                                            Class<? extends Dependency> dependency) {
+                config.bind(Component.class, component);
+                config.bind(Dependency.class, dependency);
 
                 CyclicDependenciesFound exception = assertThrows(CyclicDependenciesFound.class, () -> config.getContext());
                 Set<Class<?>> classes = Sets.newSet(exception.getComponents());
+
                 assertEquals(2, classes.size());
                 assertTrue(classes.contains(Component.class));
                 assertTrue(classes.contains(Dependency.class));
+            }
+
+            public static Stream<Arguments> should_throw_exception_if_cyclic_dependencies_found() {
+                ArrayList<Arguments> arguments = new ArrayList<>();
+                for (Named component : List.of(
+                        Named.of("Inject Constructor", CyclicComponentWithInjectConstructor.class),
+                        Named.of("Inject Field", CyclicComponentWithInjectField.class),
+                        Named.of("Inject Method", CyclicComponentWithInjectMethod.class)
+                ))
+                    for (Named dependency : List.of(
+                            Named.of("Inject Constructor", CyclicDependencyComponent.class),
+                            Named.of("Inject Field", CyclicDependencyWithInjectField.class),
+                            Named.of("Inject Method", CyclicDependencyWithInjectMethod.class)
+                    ))
+                        arguments.add(Arguments.of(component, dependency));
+                return arguments.stream();
+            }
+
+            static class CyclicComponentWithInjectConstructor implements Component {
+                @Inject
+                public CyclicComponentWithInjectConstructor(Dependency dependency) {
+                }
+            }
+
+            static class CyclicComponentWithInjectField implements Component {
+                @Inject
+                Dependency dependency;
+            }
+
+            static class CyclicComponentWithInjectMethod implements Component {
+                @Inject
+                void install(Dependency dependency) {
+                }
+            }
+
+            static class CyclicDependencyComponent implements Dependency {
+                @Inject
+                public CyclicDependencyComponent(Component component) {
+                }
+            }
+
+            static class CyclicDependencyWithInjectField implements Component {
+                @Inject
+                Component component;
+            }
+
+            static class CyclicDependencyWithInjectMethod implements Component {
+                @Inject
+                void install(Component component) {
+                }
             }
 
             @Test
