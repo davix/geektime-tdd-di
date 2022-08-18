@@ -1,5 +1,6 @@
 package geektime.tdd.di;
 
+import java.lang.reflect.ParameterizedType;
 import java.util.*;
 
 public class ContextConfig {
@@ -27,6 +28,14 @@ public class ContextConfig {
             @Override
             public <T> Optional<T> get(Class<T> type) {
                 return Optional.ofNullable(providers.get(type)).map(p -> (T) p.get(this));
+            }
+
+            @Override
+            public Optional get(ParameterizedType type) {
+                if (type.getRawType() != jakarta.inject.Provider.class) return Optional.empty();
+                Class<?> ComponentType = (Class<?>) type.getActualTypeArguments()[0];
+                return Optional.ofNullable(providers.get(ComponentType))
+                        .map(provider -> (jakarta.inject.Provider<Object>) () -> provider.get(this));
             }
         };
     }
