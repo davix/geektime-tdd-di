@@ -1,11 +1,13 @@
 package geektime.tdd.di;
 
 import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.lang.reflect.ParameterizedType;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -13,11 +15,15 @@ import static org.mockito.ArgumentMatchers.eq;
 
 public class InjectionTest {
     private Dependency dependency = Mockito.mock(Dependency.class);
+    private Provider<Dependency> dependencyProvider = Mockito.mock(Provider.class);
     private Context context = Mockito.mock(Context.class);
 
     @BeforeEach
-    public void setup() {
+    public void setup() throws NoSuchFieldException {
+        ParameterizedType providerType = (ParameterizedType) InjectionTest.class.getDeclaredField("dependencyProvider").getGenericType();
+
         Mockito.when(context.get(eq(Dependency.class))).thenReturn(Optional.of(dependency));
+        Mockito.when(context.get(eq(providerType))).thenReturn(Optional.of(dependencyProvider));
     }
 
     @Nested
@@ -41,6 +47,22 @@ public class InjectionTest {
             public void should_include_dependencies_from_inject_constructor() {
                 InjectionProvider<ComponentWithInjectConstructor> provider = new InjectionProvider<>(ComponentWithInjectConstructor.class);
                 assertArrayEquals(new Class<?>[]{Dependency.class}, provider.getDependencies().toArray(Class<?>[]::new));
+            }
+
+            static class ProviderInjectConstructor {
+                Provider<Dependency> dependency;
+
+                @Inject
+                public ProviderInjectConstructor(Provider<Dependency> dependency) {
+                    this.dependency = dependency;
+                }
+            }
+
+            @Test
+            public void should_inject_provider_via_inject_constructor() {
+                ProviderInjectConstructor instance = new InjectionProvider<>(ProviderInjectConstructor.class).get(context);
+
+                assertSame(dependencyProvider, instance.dependency);
             }
         }
 
