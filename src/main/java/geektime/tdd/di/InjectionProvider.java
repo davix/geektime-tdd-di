@@ -124,7 +124,11 @@ class InjectionProvider<T> implements ContextConfig.Provider<T> {
     }
 
     private Object toDependency(Context context, Field f) {
-        return context.get(f.getType()).get();
+        Type type = f.getGenericType();
+        if (type instanceof ParameterizedType)
+            return context.get((ParameterizedType) type).get();
+        else
+            return context.get((Class<?>) type).get();
     }
 
 }
