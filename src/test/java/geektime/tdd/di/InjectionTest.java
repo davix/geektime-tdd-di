@@ -52,7 +52,7 @@ public class InjectionTest {
             }
 
             @Test
-            public void should_include_dependency_provider_from_constructor() {
+            public void should_include_provider_type_from_constructor() {
                 InjectionProvider<ProviderInjectConstructor> provider = new InjectionProvider<>(ProviderInjectConstructor.class);
                 assertArrayEquals(new Type[]{dependencyProviderType}, provider.getDependencyTypes().toArray(Type[]::new));
             }
@@ -131,12 +131,17 @@ public class InjectionTest {
                 assertSame(dependency, component.dependency);
             }
 
-            //TODO include dependency type from field
 
             @Test
             public void should_include_field_dependency_in_dependencies() {
                 InjectionProvider<ComponentWithFieldInjection> provider = new InjectionProvider<>(ComponentWithFieldInjection.class);
                 assertArrayEquals(new Class<?>[]{Dependency.class}, provider.getDependencies().toArray(Class<?>[]::new));
+            }
+
+            @Test
+            public void should_include_provider_type_from_constructor() {
+                InjectionProvider<ProviderInjectField> provider = new InjectionProvider<>(ProviderInjectField.class);
+                assertArrayEquals(new Type[]{dependencyProviderType}, provider.getDependencyTypes().toArray(Type[]::new));
             }
 
             static class ProviderInjectField {
