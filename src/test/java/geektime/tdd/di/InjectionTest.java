@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -17,13 +18,14 @@ public class InjectionTest {
     private Dependency dependency = Mockito.mock(Dependency.class);
     private Provider<Dependency> dependencyProvider = Mockito.mock(Provider.class);
     private Context context = Mockito.mock(Context.class);
+    private ParameterizedType dependencyProviderType;
 
     @BeforeEach
     public void setup() throws NoSuchFieldException {
-        ParameterizedType providerType = (ParameterizedType) InjectionTest.class.getDeclaredField("dependencyProvider").getGenericType();
+        dependencyProviderType = (ParameterizedType) InjectionTest.class.getDeclaredField("dependencyProvider").getGenericType();
 
         Mockito.when(context.get(eq(Dependency.class))).thenReturn(Optional.of(dependency));
-        Mockito.when(context.get(eq(providerType))).thenReturn(Optional.of(dependencyProvider));
+        Mockito.when(context.get(eq(dependencyProviderType))).thenReturn(Optional.of(dependencyProvider));
     }
 
     @Nested
@@ -49,7 +51,11 @@ public class InjectionTest {
                 assertArrayEquals(new Class<?>[]{Dependency.class}, provider.getDependencies().toArray(Class<?>[]::new));
             }
 
-            //TODO include dependency type from constructor
+            @Test
+            public void should_include_dependency_provider_from_constructor() {
+                InjectionProvider<ProviderInjectConstructor> provider = new InjectionProvider<>(ProviderInjectConstructor.class);
+                assertArrayEquals(new Type[]{dependencyProviderType}, provider.getDependencyTypes().toArray(Type[]::new));
+            }
 
             static class ProviderInjectConstructor {
                 Provider<Dependency> dependency;
