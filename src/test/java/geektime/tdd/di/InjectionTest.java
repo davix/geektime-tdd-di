@@ -139,7 +139,7 @@ public class InjectionTest {
             }
 
             @Test
-            public void should_include_provider_type_from_constructor() {
+            public void should_include_provider_type_from_field() {
                 InjectionProvider<ProviderInjectField> provider = new InjectionProvider<>(ProviderInjectField.class);
                 assertArrayEquals(new Type[]{dependencyProviderType}, provider.getDependencyTypes().toArray(Type[]::new));
             }
@@ -207,7 +207,6 @@ public class InjectionTest {
                 assertSame(dependency, component.dependency);
             }
 
-            //TODO include dependency type from method
 
             static class SuperclassWithInjectMethod {
                 int supperCalled = 0;
@@ -263,6 +262,12 @@ public class InjectionTest {
             public void should_include_method_dependency_in_dependencies() {
                 InjectionProvider<InjectMethodWithDependency> provider = new InjectionProvider<>(InjectMethodWithDependency.class);
                 assertArrayEquals(new Class<?>[]{Dependency.class}, provider.getDependencies().toArray(Class<?>[]::new));
+            }
+
+            @Test
+            public void should_include_provider_type_from_method() {
+                InjectionProvider<ProviderInjectMethod> provider = new InjectionProvider<>(ProviderInjectMethod.class);
+                assertArrayEquals(new Type[]{dependencyProviderType}, provider.getDependencyTypes().toArray(Type[]::new));
             }
 
             static class ProviderInjectMethod {
