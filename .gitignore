@@ -40,3 +40,12 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+/.idea/dictionaries/whuang.xml
+/.idea/.gitignore
+/.idea/aws.xml
+/.idea/git_toolbox_prj.xml
+/.idea/gradle.xml
+/.idea/misc.xml
+/.idea/uiDesigner.xml
+/.idea/vcs.xml
+/.java-version
