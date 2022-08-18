@@ -170,9 +170,9 @@ public class ContainerTest {
                 return Stream.of(Arguments.of(Named.of("Inject Constructor", MissingDependencyConstructor.class)),
                         Arguments.of(Named.of("Inject Field", MissingDependencyField.class)),
                         Arguments.of(Named.of("Inject Method", MissingDependencyMethod.class)),
-                        Arguments.of(Named.of("Provider in Constructor", MissingDependencyProviderConstructor.class))
-                        //TODO provider field
-                        //TODO provider method
+                        Arguments.of(Named.of("Provider in Constructor", MissingDependencyProviderConstructor.class)),
+                        Arguments.of(Named.of("Provider in Field", MissingDependencyProviderField.class)),
+                        Arguments.of(Named.of("Provider in Method", MissingDependencyProviderMethod.class))
                 );
             }
 
@@ -196,6 +196,17 @@ public class ContainerTest {
             static class MissingDependencyProviderConstructor implements Component {
                 @Inject
                 public MissingDependencyProviderConstructor(Provider<Dependency> dependency) {
+                }
+            }
+
+            static class MissingDependencyProviderField implements Component {
+                @Inject
+                public Provider<Dependency> dependency;
+            }
+
+            static class MissingDependencyProviderMethod implements Component {
+                @Inject
+                void install(Provider<Dependency> dependency) {
                 }
             }
 
