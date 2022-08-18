@@ -290,6 +290,20 @@ public class ContainerTest {
                 assertTrue(classes.contains(AnotherDependency.class));
             }
 
+            static class CyclicDependencyProviderConstructor implements Dependency {
+                @Inject
+                public CyclicDependencyProviderConstructor(Provider<Component> component) {
+                }
+            }
+
+            @Test
+            public void should_not_throw_exception_if_cyclic_dependency_via_provider() {
+                config.bind(Component.class, CyclicComponentWithInjectConstructor.class);
+                config.bind(Dependency.class, CyclicDependencyProviderConstructor.class);
+
+                Context context = config.getContext();
+                assertTrue(context.get(Component.class).isPresent());
+            }
         }
 
     }
