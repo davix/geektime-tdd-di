@@ -169,8 +169,8 @@ public class ContainerTest {
             public static Stream<Arguments> should_throw_exception_if_dependency_not_found() {
                 return Stream.of(Arguments.of(Named.of("Inject Constructor", MissingDependencyConstructor.class)),
                         Arguments.of(Named.of("Inject Field", MissingDependencyField.class)),
-                        Arguments.of(Named.of("Inject Method", MissingDependencyMethod.class))
-                        //TODO Arguments.of(Named.of("Provider in Constructor", MissingDependencyProviderConstructor.class))
+                        Arguments.of(Named.of("Inject Method", MissingDependencyMethod.class)),
+                        Arguments.of(Named.of("Provider in Constructor", MissingDependencyProviderConstructor.class))
                         //TODO provider field
                         //TODO provider method
                 );
