@@ -1,6 +1,7 @@
 package geektime.tdd.di;
 
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.*;
 
 public class ContextConfig {
@@ -12,6 +13,11 @@ public class ContextConfig {
         default List<Class<?>> getDependencies() {
             return List.of();
         }
+
+        default List<Type> getDependencyTypes() {
+            return List.of();
+        }
+
     }
 
     public <T> void bind(Class<T> type, T instance) {

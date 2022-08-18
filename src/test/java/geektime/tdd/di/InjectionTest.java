@@ -37,7 +37,7 @@ public class InjectionTest {
             }
 
             @Test
-            public void should_inject_depedency_via_inject_constructor() {
+            public void should_inject_dependency_via_inject_constructor() {
                 ComponentWithInjectConstructor instance = new InjectionProvider<>(ComponentWithInjectConstructor.class).get(context);
                 assertNotNull(instance);
                 assertEquals(dependency, instance.getDependency());
@@ -48,6 +48,8 @@ public class InjectionTest {
                 InjectionProvider<ComponentWithInjectConstructor> provider = new InjectionProvider<>(ComponentWithInjectConstructor.class);
                 assertArrayEquals(new Class<?>[]{Dependency.class}, provider.getDependencies().toArray(Class<?>[]::new));
             }
+
+            //TODO include dependency type from constructor
 
             static class ProviderInjectConstructor {
                 Provider<Dependency> dependency;
@@ -123,6 +125,8 @@ public class InjectionTest {
                 assertSame(dependency, component.dependency);
             }
 
+            //TODO include dependency type from field
+
             @Test
             public void should_include_field_dependency_in_dependencies() {
                 InjectionProvider<ComponentWithFieldInjection> provider = new InjectionProvider<>(ComponentWithFieldInjection.class);
@@ -191,6 +195,8 @@ public class InjectionTest {
                 InjectMethodWithDependency component = new InjectionProvider<>(InjectMethodWithDependency.class).get(context);
                 assertSame(dependency, component.dependency);
             }
+
+            //TODO include dependency type from method
 
             static class SuperclassWithInjectMethod {
                 int supperCalled = 0;
