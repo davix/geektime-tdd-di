@@ -27,17 +27,24 @@ public class ContextConfig {
     public Context getContext() {
         providers.keySet().forEach(c -> checkDependencies(c, new Stack<>()));
         return new Context() {
-            @Override
-            public <T> Optional<T> get(Class<T> type) {
+
+            private <T> Optional<T> getC(Class<T> type) {
                 return Optional.ofNullable(providers.get(type)).map(p -> (T) p.get(this));
             }
 
-            @Override
-            public Optional get(ParameterizedType type) {
+            private Optional<?> getT(ParameterizedType type) {
                 if (type.getRawType() != jakarta.inject.Provider.class) return Optional.empty();
                 Class<?> ComponentType = (Class<?>) type.getActualTypeArguments()[0];
                 return Optional.ofNullable(providers.get(ComponentType))
                         .map(provider -> (jakarta.inject.Provider<Object>) () -> provider.get(this));
+            }
+
+            @Override
+            public Optional getType(Type type) {
+                if (type instanceof ParameterizedType)
+                    return getT((ParameterizedType) type);
+                else
+                    return getC((Class<?>) type);
             }
         };
     }

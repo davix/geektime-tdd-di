@@ -39,12 +39,12 @@ public class ContainerTest {
                 };
                 config.bind(Component.class, instance);
 
-                assertSame(instance, config.getContext().get(Component.class).get());
+                assertSame(instance, config.getContext().getType(Component.class).get());
             }
 
             @Test
             public void should_return_empty_if_no_component_defined() {
-                Optional<Component> component = config.getContext().get(Component.class);
+                Optional<Component> component = config.getContext().getType(Component.class);
                 assertTrue(component.isEmpty());
             }
 
@@ -56,7 +56,7 @@ public class ContainerTest {
                 config.bind(Dependency.class, dependency);
                 config.bind(Component.class, type);
 
-                Optional<Component> component = config.getContext().get(Component.class);
+                Optional<Component> component = config.getContext().getType(Component.class);
                 assertTrue(component.isPresent());
                 assertSame(dependency, component.get().dependency());
             }
@@ -125,7 +125,7 @@ public class ContainerTest {
 //                assertEquals(Provider.class, type.getRawType());
 //                assertEquals(Component.class, type.getActualTypeArguments()[0]);
 
-                Provider<Component> provider = (Provider<Component>) context.get(type).get();
+                Provider<Component> provider = (Provider<Component>) context.getType(type).get();
                 assertSame(instance, provider.get());
             }
 
@@ -143,7 +143,7 @@ public class ContainerTest {
                 ParameterizedType type = new TypeLiteral<List<Component>>() {
                 }.getType();
 
-                assertFalse(context.get(type).isPresent());
+                assertFalse(context.getType(type).isPresent());
             }
 
             static abstract class TypeLiteral<T> {
@@ -302,7 +302,7 @@ public class ContainerTest {
                 config.bind(Dependency.class, CyclicDependencyProviderConstructor.class);
 
                 Context context = config.getContext();
-                assertTrue(context.get(Component.class).isPresent());
+                assertTrue(context.getType(Component.class).isPresent());
             }
         }
 
