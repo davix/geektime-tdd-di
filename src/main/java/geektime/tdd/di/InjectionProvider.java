@@ -122,17 +122,14 @@ class InjectionProvider<T> implements ContextConfig.Provider<T> {
 
     private static Object[] toDependencies(Context context, Executable executable) {
         return stream(executable.getParameters())
-                .map(p -> {
-                    Type type = p.getParameterizedType();
-                    if (type instanceof ParameterizedType)
-                        return context.get((ParameterizedType) type).get();
-                    else
-                        return context.get((Class<?>) type).get();
-                }).toArray(Object[]::new);
+                .map(p -> toDependency(context, p.getParameterizedType())).toArray(Object[]::new);
     }
 
     private Object toDependency(Context context, Field f) {
-        Type type = f.getGenericType();
+        return toDependency(context, f.getGenericType());
+    }
+
+    private static Object toDependency(Context context, Type type) {
         if (type instanceof ParameterizedType)
             return context.get((ParameterizedType) type).get();
         else
