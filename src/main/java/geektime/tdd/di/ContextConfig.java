@@ -10,11 +10,7 @@ public class ContextConfig {
     interface Provider<T> {
         T get(Context context);
 
-        default List<Class<?>> getDependencies() {
-            return List.of();
-        }
-
-        default List<Type> getDependencyTypes() {
+        default List<Type> getDependencies() {
             return List.of();
         }
 
@@ -47,7 +43,7 @@ public class ContextConfig {
     }
 
     private void checkDependencies(Class<?> c, Stack<Class<?>> visiting) {
-        for (Type d : providers.get(c).getDependencyTypes()) {
+        for (Type d : providers.get(c).getDependencies()) {
             if (d instanceof Class)
                 checkDependency(c, visiting, (Class<?>) d);
             if (d instanceof ParameterizedType) {
