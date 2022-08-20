@@ -9,6 +9,10 @@ public class ContextConfig {
     interface Provider<T> {
         T get(Context context);
 
+        default List<Context.Ref> getDependencyRefs() {
+            return getDependencies().stream().map(Context.Ref::of).toList();
+        }
+
         default List<Type> getDependencies() {
             return List.of();
         }
@@ -40,8 +44,7 @@ public class ContextConfig {
     }
 
     private void checkDependencies(Class<?> c, Stack<Class<?>> visiting) {
-        for (Type d : providers.get(c).getDependencies()) {
-            Context.Ref ref = Context.Ref.of(d);
+        for (Context.Ref ref : providers.get(c).getDependencyRefs()) {
             Class<?> comp = ref.getComponent();
             if (!providers.containsKey(comp))
                 throw new DependencyNotFoundException(c, comp);
