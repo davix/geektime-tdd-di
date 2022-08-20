@@ -1,6 +1,5 @@
 package geektime.tdd.di;
 
-import java.lang.reflect.Type;
 import java.util.*;
 
 public class ContextConfig {
@@ -9,14 +8,9 @@ public class ContextConfig {
     interface Provider<T> {
         T get(Context context);
 
-        default List<Context.Ref> getDependencyRefs() {
-            return getDependencies().stream().map(Context.Ref::of).toList();
-        }
-
-        default List<Type> getDependencies() {
+        default List<Context.Ref> getDependencies() {
             return List.of();
         }
-
     }
 
     public <T> void bind(Class<T> type, T instance) {
@@ -44,7 +38,7 @@ public class ContextConfig {
     }
 
     private void checkDependencies(Class<?> c, Stack<Class<?>> visiting) {
-        for (Context.Ref ref : providers.get(c).getDependencyRefs()) {
+        for (Context.Ref ref : providers.get(c).getDependencies()) {
             Class<?> comp = ref.getComponent();
             if (!providers.containsKey(comp))
                 throw new DependencyNotFoundException(c, comp);
