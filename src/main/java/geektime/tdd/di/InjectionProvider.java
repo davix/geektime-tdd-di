@@ -3,10 +3,7 @@ package geektime.tdd.di;
 import jakarta.inject.Inject;
 
 import java.lang.reflect.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -122,7 +119,7 @@ class InjectionProvider<T> implements ContextConfig.Provider<T> {
     }
 
     private static Object toDependency(Context context, Type type) {
-        return context.get(type).get();
+        return ((Optional) context.get(Context.Ref.of(type))).get();
     }
 
 }

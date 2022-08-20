@@ -26,12 +26,6 @@ public class ContextConfig {
     public Context getContext() {
         providers.keySet().forEach(c -> checkDependencies(c, new Stack<>()));
         return new Context() {
-
-            @Override
-            public Optional get(Type type) {
-                return get(Ref.of(type));
-            }
-
             @Override
             public Optional<?> get(Ref ref) {
                 if (ref.isContainer()) {

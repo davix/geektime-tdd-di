@@ -2,11 +2,10 @@ package geektime.tdd.di;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Objects;
 import java.util.Optional;
 
 public interface Context {
-    Optional get(Type type);
-
     Optional<?> get(Ref ref);
 
     class Ref {
@@ -37,6 +36,19 @@ public interface Context {
 
         public boolean isContainer() {
             return container != null;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Ref ref = (Ref) o;
+            return Objects.equals(container, ref.container) && component.equals(ref.component);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(container, component);
         }
     }
 }

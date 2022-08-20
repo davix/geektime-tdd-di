@@ -24,8 +24,8 @@ public class InjectionTest {
     public void setup() throws NoSuchFieldException {
         dependencyProviderType = (ParameterizedType) InjectionTest.class.getDeclaredField("dependencyProvider").getGenericType();
 
-        Mockito.when(context.get(eq(Dependency.class))).thenReturn(Optional.of(dependency));
-        Mockito.when(context.get(eq(dependencyProviderType))).thenReturn(Optional.of(dependencyProvider));
+        Mockito.when((Optional) context.get(eq(Context.Ref.of(Dependency.class)))).thenReturn(Optional.of(dependency));
+        Mockito.when((Optional) context.get(eq(Context.Ref.of(dependencyProviderType)))).thenReturn(Optional.of(dependencyProvider));
     }
 
     @Nested
