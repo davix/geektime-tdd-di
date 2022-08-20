@@ -11,7 +11,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.internal.util.collections.Sets;
 
-import java.lang.reflect.ParameterizedType;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -120,12 +119,8 @@ public class ContainerTest {
                 config.bind(Component.class, instance);
                 Context context = config.getContext();
 
-                ParameterizedType type = new TypeLiteral<Provider<Component>>() {
-                }.getType();
-//                assertEquals(Provider.class, type.getRawType());
-//                assertEquals(Component.class, type.getActualTypeArguments()[0]);
-
-                Provider<Component> provider = (Provider<Component>) ((Optional) context.get(Context.Ref.of(type))).get();
+                Provider<Component> provider = (Provider<Component>) context.get(new Context.Ref<Provider<Component>>() {
+                }).get();
                 assertSame(instance, provider.get());
             }
 
@@ -140,17 +135,10 @@ public class ContainerTest {
                 config.bind(Component.class, instance);
                 Context context = config.getContext();
 
-                ParameterizedType type = new TypeLiteral<List<Component>>() {
-                }.getType();
-
-                assertFalse(context.get(Context.Ref.of(type)).isPresent());
+                assertFalse(context.get(new Context.Ref<List<Component>>() {
+                }).isPresent());
             }
 
-            static abstract class TypeLiteral<T> {
-                public ParameterizedType getType() {
-                    return (ParameterizedType) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
-                }
-            }
         }
 
         @Nested

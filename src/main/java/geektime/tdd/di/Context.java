@@ -13,21 +13,33 @@ public interface Context {
         private Class<T> component;
 
         public Ref(Class<T> component) {
-            this.component = component;
+            init(component);
         }
 
-        public Ref(ParameterizedType container) {
-            this.container = container.getRawType();
-            this.component = (Class<T>) container.getActualTypeArguments()[0];
+        public Ref(Type container) {
+            init(container);
         }
 
         public static Ref of(Type type) {
-            if (type instanceof ParameterizedType container) return new Ref(container);
-            return new Ref((Class<?>) type);
+            return new Ref(type);
         }
 
         public static <T> Ref<T> of(Class<T> component) {
             return new Ref(component);
+        }
+
+        protected Ref() {
+            Type type = ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+            init(type);
+        }
+
+        private void init(Type type) {
+            if (type instanceof ParameterizedType container) {
+                this.container = container.getRawType();
+                this.component = (Class<T>) container.getActualTypeArguments()[0];
+            } else {
+                this.component = (Class<T>) type;
+            }
         }
 
         public Type getContainer() {
