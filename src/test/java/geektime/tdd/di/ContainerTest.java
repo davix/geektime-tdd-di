@@ -180,8 +180,42 @@ public class ContainerTest {
                     }
                 }
 
+                @Test
+                public void should_bind_instance_with_multi_qualifier() {
+                    Component instance = new Component() {
+                        @Override
+                        public Dependency dependency() {
+                            return null;
+                        }
+                    };
+                    config.bind(Component.class, instance, new NamedLiteral("ChosenOne"), new NamedLiteral("SkyWalker"));
+                    Context context = config.getContext();
 
-                //TODO binding component with multiple qualifiers
+                    Component chosenOne = context.get(Context.Ref.of(Component.class, new NamedLiteral("ChosenOne"))).get();
+                    Component skywalker = context.get(Context.Ref.of(Component.class, new NamedLiteral("SkyWalker"))).get();
+
+                    assertSame(instance, chosenOne);
+                    assertSame(instance, skywalker);
+                }
+
+                @Test
+                public void should_bind_component_with_multi_qualifier() {
+                    Dependency dependency = new Dependency() {
+                    };
+                    config.bind(Dependency.class, dependency);
+                    config.bind(InjectConstructor.class,
+                            InjectConstructor.class,
+                            new NamedLiteral("ChosenOne"),
+                            new NamedLiteral("SkyWalker"));
+                    Context context = config.getContext();
+
+                    InjectConstructor chosenOne = context.get(Context.Ref.of(InjectConstructor.class, new NamedLiteral("ChosenOne"))).get();
+                    InjectConstructor skywalker = context.get(Context.Ref.of(InjectConstructor.class, new NamedLiteral("SkyWalker"))).get();
+
+                    assertSame(dependency, chosenOne.dependency);
+                    assertSame(dependency, skywalker.dependency);
+                }
+
                 //TODO throw illegal component if illegal qualifier
             }
         }
