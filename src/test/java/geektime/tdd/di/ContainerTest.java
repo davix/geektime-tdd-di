@@ -2,10 +2,7 @@ package geektime.tdd.di;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Named;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -214,6 +211,8 @@ public class ContainerTest {
                     assertThrows(IllegalComponentException.class, () ->
                             config.bind(InjectConstructor.class, InjectConstructor.class, new TestLiteral()));
                 }
+
+                //TODO provider
             }
         }
 
@@ -372,6 +371,21 @@ public class ContainerTest {
             @Nested
             public class WithQualifier {
                 //TODO dependency missing if qualifier not match
+                @Test
+                @Disabled
+                public void should_throw_exception_if_dependency_with_qualifier_not_found() {
+                    config.bind(Dependency.class, new Dependency() {
+                    });
+                    config.bind(InjectConstructor.class, InjectConstructor.class);
+
+                    assertThrows(DependencyNotFoundException.class, () -> config.getContext());
+                }
+
+                static class InjectConstructor {
+                    @Inject
+                    public InjectConstructor(@Skywalker Dependency dependency) {
+                    }
+                }
                 //TODO check cyclic dependencies with qualifier
             }
         }
