@@ -9,7 +9,7 @@ public class ContextConfig {
     interface Provider<T> {
         T get(Context context);
 
-        default List<Context.Ref> getDependencies() {
+        default List<ComponentRef> getDependencies() {
             return List.of();
         }
     }
@@ -39,7 +39,7 @@ public class ContextConfig {
         components.keySet().forEach(c -> checkDependencies(c, new Stack<>()));
         return new Context() {
             @Override
-            public <T> Optional<T> get(Ref<T> ref) {
+            public <T> Optional<T> get(ComponentRef<T> ref) {
                 if (ref.getQualifier() != null)
                     return Optional.ofNullable(components.get(new Component(ref.getComponent(), ref.getQualifier())))
                             .map(p -> (T) p.get(this));
@@ -54,12 +54,12 @@ public class ContextConfig {
         };
     }
 
-    private <T> Provider<?> getProvider(Context.Ref<T> ref) {
+    private <T> Provider<?> getProvider(ComponentRef<T> ref) {
         return components.get(new Component(ref.getComponent(), ref.getQualifier()));
     }
 
     private void checkDependencies(Component c, Stack<Class<?>> visiting) {
-        for (Context.Ref ref : components.get(c).getDependencies()) {
+        for (ComponentRef ref : components.get(c).getDependencies()) {
             Component comp = new Component(ref.getComponent(), ref.getQualifier());
             if (!components.containsKey(comp))
                 throw new DependencyNotFoundException(c.type(), ref.getComponent());

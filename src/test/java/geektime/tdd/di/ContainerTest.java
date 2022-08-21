@@ -39,12 +39,12 @@ public class ContainerTest {
                 };
                 config.bind(Component.class, instance);
 
-                assertSame(instance, ((Optional) config.getContext().get(Context.Ref.of(Component.class))).get());
+                assertSame(instance, ((Optional) config.getContext().get(ComponentRef.of(Component.class))).get());
             }
 
             @Test
             public void should_return_empty_if_no_component_defined() {
-                Optional<Component> component = (Optional) config.getContext().get(Context.Ref.of(Component.class));
+                Optional<Component> component = (Optional) config.getContext().get(ComponentRef.of(Component.class));
                 assertTrue(component.isEmpty());
             }
 
@@ -56,7 +56,7 @@ public class ContainerTest {
                 config.bind(Dependency.class, dependency);
                 config.bind(Component.class, type);
 
-                Optional<Component> component = (Optional) config.getContext().get(Context.Ref.of(Component.class));
+                Optional<Component> component = (Optional) config.getContext().get(ComponentRef.of(Component.class));
                 assertTrue(component.isPresent());
                 assertSame(dependency, component.get().dependency());
             }
@@ -120,7 +120,7 @@ public class ContainerTest {
                 config.bind(Component.class, instance);
                 Context context = config.getContext();
 
-                Provider<Component> provider = (Provider<Component>) context.get(new Context.Ref<Provider<Component>>() {
+                Provider<Component> provider = (Provider<Component>) context.get(new ComponentRef<Provider<Component>>() {
                 }).get();
                 assertSame(instance, provider.get());
             }
@@ -136,7 +136,7 @@ public class ContainerTest {
                 config.bind(Component.class, instance);
                 Context context = config.getContext();
 
-                assertFalse(context.get(new Context.Ref<List<Component>>() {
+                assertFalse(context.get(new ComponentRef<List<Component>>() {
                 }).isPresent());
             }
 
@@ -153,7 +153,7 @@ public class ContainerTest {
                     config.bind(Component.class, instance, new NamedLiteral("ChosenOne"));
                     Context context = config.getContext();
 
-                    Component chosenOne = context.get(Context.Ref.of(Component.class, new NamedLiteral("ChosenOne"))).get();
+                    Component chosenOne = context.get(ComponentRef.of(Component.class, new NamedLiteral("ChosenOne"))).get();
                     assertSame(instance, chosenOne);
                 }
 
@@ -167,7 +167,7 @@ public class ContainerTest {
                             new NamedLiteral("ChosenOne"));
                     Context context = config.getContext();
 
-                    InjectConstructor chosenOne = context.get(Context.Ref.of(InjectConstructor.class, new NamedLiteral("ChosenOne"))).get();
+                    InjectConstructor chosenOne = context.get(ComponentRef.of(InjectConstructor.class, new NamedLiteral("ChosenOne"))).get();
                     assertSame(dependency, chosenOne.dependency);
                 }
 
@@ -191,8 +191,8 @@ public class ContainerTest {
                     config.bind(Component.class, instance, new NamedLiteral("ChosenOne"), new NamedLiteral("SkyWalker"));
                     Context context = config.getContext();
 
-                    Component chosenOne = context.get(Context.Ref.of(Component.class, new NamedLiteral("ChosenOne"))).get();
-                    Component skywalker = context.get(Context.Ref.of(Component.class, new NamedLiteral("SkyWalker"))).get();
+                    Component chosenOne = context.get(ComponentRef.of(Component.class, new NamedLiteral("ChosenOne"))).get();
+                    Component skywalker = context.get(ComponentRef.of(Component.class, new NamedLiteral("SkyWalker"))).get();
 
                     assertSame(instance, chosenOne);
                     assertSame(instance, skywalker);
@@ -209,8 +209,8 @@ public class ContainerTest {
                             new NamedLiteral("SkyWalker"));
                     Context context = config.getContext();
 
-                    InjectConstructor chosenOne = context.get(Context.Ref.of(InjectConstructor.class, new NamedLiteral("ChosenOne"))).get();
-                    InjectConstructor skywalker = context.get(Context.Ref.of(InjectConstructor.class, new NamedLiteral("SkyWalker"))).get();
+                    InjectConstructor chosenOne = context.get(ComponentRef.of(InjectConstructor.class, new NamedLiteral("ChosenOne"))).get();
+                    InjectConstructor skywalker = context.get(ComponentRef.of(InjectConstructor.class, new NamedLiteral("SkyWalker"))).get();
 
                     assertSame(dependency, chosenOne.dependency);
                     assertSame(dependency, skywalker.dependency);
@@ -369,7 +369,7 @@ public class ContainerTest {
                 config.bind(Dependency.class, CyclicDependencyProviderConstructor.class);
 
                 Context context = config.getContext();
-                assertTrue(context.get(Context.Ref.of(Component.class)).isPresent());
+                assertTrue(context.get(ComponentRef.of(Component.class)).isPresent());
             }
 
             @Nested
