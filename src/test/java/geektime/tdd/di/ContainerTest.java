@@ -15,6 +15,7 @@ import java.lang.annotation.Annotation;
 import java.util.*;
 import java.util.stream.Stream;
 
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ContainerTest {
@@ -188,11 +189,11 @@ public class ContainerTest {
                             return null;
                         }
                     };
-                    config.bind(Component.class, instance, new NamedLiteral("ChosenOne"), new NamedLiteral("SkyWalker"));
+                    config.bind(Component.class, instance, new NamedLiteral("ChosenOne"), new SkywalkerLiteral());
                     Context context = config.getContext();
 
                     Component chosenOne = context.get(ComponentRef.of(Component.class, new NamedLiteral("ChosenOne"))).get();
-                    Component skywalker = context.get(ComponentRef.of(Component.class, new NamedLiteral("SkyWalker"))).get();
+                    Component skywalker = context.get(ComponentRef.of(Component.class, new SkywalkerLiteral())).get();
 
                     assertSame(instance, chosenOne);
                     assertSame(instance, skywalker);
@@ -206,11 +207,11 @@ public class ContainerTest {
                     config.bind(InjectConstructor.class,
                             InjectConstructor.class,
                             new NamedLiteral("ChosenOne"),
-                            new NamedLiteral("SkyWalker"));
+                            new SkywalkerLiteral());
                     Context context = config.getContext();
 
                     InjectConstructor chosenOne = context.get(ComponentRef.of(InjectConstructor.class, new NamedLiteral("ChosenOne"))).get();
-                    InjectConstructor skywalker = context.get(ComponentRef.of(InjectConstructor.class, new NamedLiteral("SkyWalker"))).get();
+                    InjectConstructor skywalker = context.get(ComponentRef.of(InjectConstructor.class, new SkywalkerLiteral())).get();
 
                     assertSame(dependency, chosenOne.dependency);
                     assertSame(dependency, skywalker.dependency);
@@ -396,6 +397,20 @@ record NamedLiteral(String value) implements jakarta.inject.Named {
     @Override
     public Class<? extends Annotation> annotationType() {
         return jakarta.inject.Named.class;
+    }
+}
+
+@java.lang.annotation.Documented
+@java.lang.annotation.Retention(RUNTIME)
+@jakarta.inject.Qualifier
+@interface Skywalker {
+}
+
+record SkywalkerLiteral() implements Skywalker {
+
+    @Override
+    public Class<? extends Annotation> annotationType() {
+        return Skywalker.class;
     }
 }
 
