@@ -225,12 +225,12 @@ public class ContainerTest {
 
             @ParameterizedTest
             @MethodSource
-            public void should_throw_exception_if_dependency_not_found(Class<? extends Component> component) {
-                config.bind(Component.class, component);
+            public void should_throw_exception_if_dependency_not_found(Class<? extends TestComponent> component) {
+                config.bind(TestComponent.class, component);
 
                 DependencyNotFoundException exception = assertThrows(DependencyNotFoundException.class, () -> config.getContext());
                 assertEquals(Dependency.class, exception.getDependency());
-                assertEquals(Component.class, exception.getComponent());
+                assertEquals(TestComponent.class, exception.getComponent());
             }
 
             public static Stream<Arguments> should_throw_exception_if_dependency_not_found() {
@@ -243,35 +243,35 @@ public class ContainerTest {
                 );
             }
 
-            static class MissingDependencyConstructor implements Component {
+            static class MissingDependencyConstructor implements TestComponent {
                 @Inject
                 public MissingDependencyConstructor(Dependency dependency) {
                 }
             }
 
-            static class MissingDependencyField implements Component {
+            static class MissingDependencyField implements TestComponent {
                 @Inject
                 private Dependency dependency;
             }
 
-            static class MissingDependencyMethod implements Component {
+            static class MissingDependencyMethod implements TestComponent {
                 @Inject
                 void install(Dependency dependency) {
                 }
             }
 
-            static class MissingDependencyProviderConstructor implements Component {
+            static class MissingDependencyProviderConstructor implements TestComponent {
                 @Inject
                 public MissingDependencyProviderConstructor(Provider<Dependency> dependency) {
                 }
             }
 
-            static class MissingDependencyProviderField implements Component {
+            static class MissingDependencyProviderField implements TestComponent {
                 @Inject
                 public Provider<Dependency> dependency;
             }
 
-            static class MissingDependencyProviderMethod implements Component {
+            static class MissingDependencyProviderMethod implements TestComponent {
                 @Inject
                 void install(Provider<Dependency> dependency) {
                 }
@@ -279,16 +279,16 @@ public class ContainerTest {
 
             @ParameterizedTest(name = "cyclic dependency between {0} and {1}")
             @MethodSource
-            public void should_throw_exception_if_cyclic_dependencies_found(Class<? extends Component> component,
+            public void should_throw_exception_if_cyclic_dependencies_found(Class<? extends TestComponent> component,
                                                                             Class<? extends Dependency> dependency) {
-                config.bind(Component.class, component);
+                config.bind(TestComponent.class, component);
                 config.bind(Dependency.class, dependency);
 
                 CyclicDependenciesFound exception = assertThrows(CyclicDependenciesFound.class, () -> config.getContext());
                 Set<Class<?>> classes = Sets.newSet(exception.getComponents());
 
                 assertEquals(2, classes.size());
-                assertTrue(classes.contains(Component.class));
+                assertTrue(classes.contains(TestComponent.class));
                 assertTrue(classes.contains(Dependency.class));
             }
 
@@ -308,18 +308,18 @@ public class ContainerTest {
                 return arguments.stream();
             }
 
-            static class CyclicComponentWithInjectConstructor implements Component {
+            static class CyclicComponentWithInjectConstructor implements TestComponent {
                 @Inject
                 public CyclicComponentWithInjectConstructor(Dependency dependency) {
                 }
             }
 
-            static class CyclicComponentWithInjectField implements Component {
+            static class CyclicComponentWithInjectField implements TestComponent {
                 @Inject
                 Dependency dependency;
             }
 
-            static class CyclicComponentWithInjectMethod implements Component {
+            static class CyclicComponentWithInjectMethod implements TestComponent {
                 @Inject
                 void install(Dependency dependency) {
                 }
@@ -327,24 +327,24 @@ public class ContainerTest {
 
             static class CyclicDependencyComponent implements Dependency {
                 @Inject
-                public CyclicDependencyComponent(Component component) {
+                public CyclicDependencyComponent(TestComponent component) {
                 }
             }
 
-            static class CyclicDependencyWithInjectField implements Component {
+            static class CyclicDependencyWithInjectField implements TestComponent {
                 @Inject
-                Component component;
+                TestComponent component;
             }
 
-            static class CyclicDependencyWithInjectMethod implements Component {
+            static class CyclicDependencyWithInjectMethod implements TestComponent {
                 @Inject
-                void install(Component component) {
+                void install(TestComponent component) {
                 }
             }
 
             @Test
             public void should_throw_exception_if_transitive_cyclic_dependencies_found() {
-                config.bind(Component.class, ComponentWithInjectConstructor.class);
+                config.bind(TestComponent.class, ComponentWithInjectConstructor.class);
                 config.bind(Dependency.class, DependencyDependedOnAnotherDependency.class);
                 config.bind(AnotherDependency.class, AnotherDependencyDependedOnComponent.class);
 
@@ -352,24 +352,24 @@ public class ContainerTest {
 
                 List<Class<?>> classes = Arrays.asList(exception.getComponents());
                 assertEquals(3, classes.size());
-                assertTrue(classes.contains(Component.class));
+                assertTrue(classes.contains(TestComponent.class));
                 assertTrue(classes.contains(Dependency.class));
                 assertTrue(classes.contains(AnotherDependency.class));
             }
 
             static class CyclicDependencyProviderConstructor implements Dependency {
                 @Inject
-                public CyclicDependencyProviderConstructor(Provider<Component> component) {
+                public CyclicDependencyProviderConstructor(Provider<TestComponent> component) {
                 }
             }
 
             @Test
             public void should_not_throw_exception_if_cyclic_dependency_via_provider() {
-                config.bind(Component.class, CyclicComponentWithInjectConstructor.class);
+                config.bind(TestComponent.class, CyclicComponentWithInjectConstructor.class);
                 config.bind(Dependency.class, CyclicDependencyProviderConstructor.class);
 
                 Context context = config.getContext();
-                assertTrue(context.get(ComponentRef.of(Component.class)).isPresent());
+                assertTrue(context.get(ComponentRef.of(TestComponent.class)).isPresent());
             }
 
             @Nested
@@ -399,7 +399,7 @@ record NamedLiteral(String value) implements jakarta.inject.Named {
     }
 }
 
-interface Component {
+interface TestComponent {
 }
 
 interface Dependency {
@@ -409,12 +409,12 @@ interface AnotherDependency {
 }
 
 
-class ComponentWithDefaultConstructor implements Component {
+class ComponentWithDefaultConstructor implements TestComponent {
     public ComponentWithDefaultConstructor() {
     }
 }
 
-class ComponentWithInjectConstructor implements Component {
+class ComponentWithInjectConstructor implements TestComponent {
     private Dependency dependency;
 
     @Inject
@@ -427,7 +427,7 @@ class ComponentWithInjectConstructor implements Component {
     }
 }
 
-class ComponentWithMultipleInjectConstructors implements Component {
+class ComponentWithMultipleInjectConstructors implements TestComponent {
     @Inject
     public ComponentWithMultipleInjectConstructors(String name) {
     }
@@ -437,7 +437,7 @@ class ComponentWithMultipleInjectConstructors implements Component {
     }
 }
 
-class ComponentWithoutInjectOrDefaultConstructors implements Component {
+class ComponentWithoutInjectOrDefaultConstructors implements TestComponent {
     public ComponentWithoutInjectOrDefaultConstructors(String name) {
     }
 }
@@ -456,11 +456,11 @@ class DependencyWithInjectConstructor implements Dependency {
 }
 
 class DependencyDependedOnComponent implements Dependency {
-    private Component component;
+    private TestComponent component;
 
     @Inject
 
-    public DependencyDependedOnComponent(Component component) {
+    public DependencyDependedOnComponent(TestComponent component) {
         this.component = component;
     }
 }
@@ -476,11 +476,11 @@ class DependencyDependedOnAnotherDependency implements Dependency {
 }
 
 class AnotherDependencyDependedOnComponent implements AnotherDependency {
-    private Component component;
+    private TestComponent component;
 
     @Inject
 
-    public AnotherDependencyDependedOnComponent(Component component) {
+    public AnotherDependencyDependedOnComponent(TestComponent component) {
         this.component = component;
     }
 }
