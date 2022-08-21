@@ -112,32 +112,24 @@ public class ContainerTest {
 
             @Test
             public void should_retrieve_bind_type_as_provider() {
-                Component instance = new Component() {
-                    @Override
-                    public Dependency dependency() {
-                        return null;
-                    }
+                TestComponent instance = new TestComponent() {
                 };
-                config.bind(Component.class, instance);
+                config.bind(TestComponent.class, instance);
                 Context context = config.getContext();
 
-                Provider<Component> provider = (Provider<Component>) context.get(new ComponentRef<Provider<Component>>() {
+                Provider<TestComponent> provider = context.get(new ComponentRef<Provider<TestComponent>>() {
                 }).get();
                 assertSame(instance, provider.get());
             }
 
             @Test
             public void should_not_retrieve_bind_type_as_unsupported_container() {
-                Component instance = new Component() {
-                    @Override
-                    public Dependency dependency() {
-                        return null;
-                    }
+                TestComponent instance = new TestComponent() {
                 };
-                config.bind(Component.class, instance);
+                config.bind(TestComponent.class, instance);
                 Context context = config.getContext();
 
-                assertFalse(context.get(new ComponentRef<List<Component>>() {
+                assertFalse(context.get(new ComponentRef<List<TestComponent>>() {
                 }).isPresent());
             }
 
@@ -145,16 +137,12 @@ public class ContainerTest {
             public class WithQualifier {
                 @Test
                 public void should_bind_instance_with_qualifier() {
-                    Component instance = new Component() {
-                        @Override
-                        public Dependency dependency() {
-                            return null;
-                        }
+                    TestComponent instance = new TestComponent() {
                     };
-                    config.bind(Component.class, instance, new NamedLiteral("ChosenOne"));
+                    config.bind(TestComponent.class, instance, new NamedLiteral("ChosenOne"));
                     Context context = config.getContext();
 
-                    Component chosenOne = context.get(ComponentRef.of(Component.class, new NamedLiteral("ChosenOne"))).get();
+                    TestComponent chosenOne = context.get(ComponentRef.of(TestComponent.class, new NamedLiteral("ChosenOne"))).get();
                     assertSame(instance, chosenOne);
                 }
 
@@ -183,17 +171,13 @@ public class ContainerTest {
 
                 @Test
                 public void should_bind_instance_with_multi_qualifier() {
-                    Component instance = new Component() {
-                        @Override
-                        public Dependency dependency() {
-                            return null;
-                        }
+                    TestComponent instance = new TestComponent() {
                     };
-                    config.bind(Component.class, instance, new NamedLiteral("ChosenOne"), new SkywalkerLiteral());
+                    config.bind(TestComponent.class, instance, new NamedLiteral("ChosenOne"), new SkywalkerLiteral());
                     Context context = config.getContext();
 
-                    Component chosenOne = context.get(ComponentRef.of(Component.class, new NamedLiteral("ChosenOne"))).get();
-                    Component skywalker = context.get(ComponentRef.of(Component.class, new SkywalkerLiteral())).get();
+                    TestComponent chosenOne = context.get(ComponentRef.of(TestComponent.class, new NamedLiteral("ChosenOne"))).get();
+                    TestComponent skywalker = context.get(ComponentRef.of(TestComponent.class, new SkywalkerLiteral())).get();
 
                     assertSame(instance, chosenOne);
                     assertSame(instance, skywalker);
@@ -217,7 +201,19 @@ public class ContainerTest {
                     assertSame(dependency, skywalker.dependency);
                 }
 
-                //TODO throw illegal component if illegal qualifier
+                @Test
+                public void should_throw_exception_if_illegal_qualifier_given_to_instance() {
+                    TestComponent instance = new TestComponent() {
+                    };
+                    assertThrows(IllegalComponentException.class, () ->
+                            config.bind(TestComponent.class, instance, new TestLiteral()));
+                }
+
+                @Test
+                public void should_throw_exception_if_illegal_qualifier_given_to_component() {
+                    assertThrows(IllegalComponentException.class, () ->
+                            config.bind(InjectConstructor.class, InjectConstructor.class, new TestLiteral()));
+                }
             }
         }
 
@@ -411,6 +407,14 @@ record SkywalkerLiteral() implements Skywalker {
     @Override
     public Class<? extends Annotation> annotationType() {
         return Skywalker.class;
+    }
+}
+
+record TestLiteral() implements Test {
+
+    @Override
+    public Class<? extends Annotation> annotationType() {
+        return Test.class;
     }
 }
 
