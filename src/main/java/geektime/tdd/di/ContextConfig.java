@@ -32,9 +32,6 @@ public class ContextConfig {
             components.put(new Component(type, qualifier), new InjectionProvider<>(implementation));
     }
 
-    record Component(Class<?> type, Annotation qualifier) {
-    }
-
     public Context getContext() {
         components.keySet().forEach(c -> checkDependencies(c, new Stack<>()));
         return new Context() {
