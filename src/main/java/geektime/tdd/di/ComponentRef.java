@@ -6,17 +6,15 @@ import java.lang.reflect.Type;
 import java.util.Objects;
 
 public class ComponentRef<T> {
+    private Component component;
     private Type container;
-    private Class<T> component;
-    private Annotation qualifier;
 
-    public ComponentRef(Class<T> component) {
-        init(component);
+    public ComponentRef(Class<T> componentType) {
+        init(componentType, null);
     }
 
     public ComponentRef(Type container, Annotation qualifier) {
-        init(container);
-        this.qualifier = qualifier;
+        init(container, qualifier);
     }
 
     public static ComponentRef of(Type type) {
@@ -33,15 +31,15 @@ public class ComponentRef<T> {
 
     protected ComponentRef() {
         Type type = ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
-        init(type);
+        init(type, null);
     }
 
-    private void init(Type type) {
+    private void init(Type type, Annotation qualifier) {
         if (type instanceof ParameterizedType container) {
             this.container = container.getRawType();
-            this.component = (Class<T>) container.getActualTypeArguments()[0];
+            this.component = new Component((Class<T>) container.getActualTypeArguments()[0], qualifier);
         } else {
-            this.component = (Class<T>) type;
+            this.component = new Component((Class<T>) type, qualifier);
         }
     }
 
@@ -49,12 +47,12 @@ public class ComponentRef<T> {
         return container;
     }
 
-    public Class<?> getComponent() {
-        return component;
+    public Class<?> getComponentType() {
+        return component.type();
     }
 
-    public Annotation getQualifier() {
-        return qualifier;
+    public Component component() {
+        return component;
     }
 
     public boolean isContainer() {
@@ -65,12 +63,12 @@ public class ComponentRef<T> {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        ComponentRef ref = (ComponentRef) o;
-        return Objects.equals(container, ref.container) && component.equals(ref.component);
+        ComponentRef<?> that = (ComponentRef<?>) o;
+        return component.equals(that.component) && Objects.equals(container, that.container);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(container, component);
+        return Objects.hash(component, container);
     }
 }

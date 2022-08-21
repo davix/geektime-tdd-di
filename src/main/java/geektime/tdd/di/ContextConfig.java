@@ -37,9 +37,6 @@ public class ContextConfig {
         return new Context() {
             @Override
             public <T> Optional<T> get(ComponentRef<T> ref) {
-                if (ref.getQualifier() != null)
-                    return Optional.ofNullable(components.get(new Component(ref.getComponent(), ref.getQualifier())))
-                            .map(p -> (T) p.get(this));
                 if (ref.isContainer()) {
                     if (ref.getContainer() != jakarta.inject.Provider.class)
                         return Optional.empty();
@@ -52,18 +49,18 @@ public class ContextConfig {
     }
 
     private <T> Provider<?> getProvider(ComponentRef<T> ref) {
-        return components.get(new Component(ref.getComponent(), ref.getQualifier()));
+        return components.get(ref.component());
     }
 
     private void checkDependencies(Component c, Stack<Class<?>> visiting) {
         for (ComponentRef ref : components.get(c).getDependencies()) {
-            Component comp = new Component(ref.getComponent(), ref.getQualifier());
+            Component comp = ref.component();
             if (!components.containsKey(comp))
-                throw new DependencyNotFoundException(c.type(), ref.getComponent());
+                throw new DependencyNotFoundException(c.type(), ref.getComponentType());
             if (!ref.isContainer()) {
-                if (visiting.contains(ref.getComponent()))
+                if (visiting.contains(ref.getComponentType()))
                     throw new CyclicDependenciesFound(visiting);
-                visiting.push(ref.getComponent());
+                visiting.push(ref.getComponentType());
                 checkDependencies(comp, visiting);
                 visiting.pop();
             }
