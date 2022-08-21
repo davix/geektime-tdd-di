@@ -2,7 +2,10 @@ package geektime.tdd.di;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Named;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -372,7 +375,6 @@ public class ContainerTest {
             public class WithQualifier {
                 //TODO dependency missing if qualifier not match
                 @Test
-                @Disabled
                 public void should_throw_exception_if_dependency_with_qualifier_not_found() {
                     config.bind(Dependency.class, new Dependency() {
                     });
@@ -407,6 +409,14 @@ record NamedLiteral(String value) implements jakarta.inject.Named {
     @Override
     public Class<? extends Annotation> annotationType() {
         return jakarta.inject.Named.class;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof jakarta.inject.Named named)
+            return Objects.equals(value, named.value());
+        else
+            return false;
     }
 }
 
