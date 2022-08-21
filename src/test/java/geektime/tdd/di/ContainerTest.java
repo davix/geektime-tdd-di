@@ -139,6 +139,12 @@ public class ContainerTest {
                 }).isPresent());
             }
 
+            @Nested
+            public class WithQualifier {
+                //TODO binding component with qualifier
+                //TODO binding component with multiple qualifiers
+                //TODO throw illegal component if illegal qualifier
+            }
         }
 
         @Nested
@@ -291,6 +297,12 @@ public class ContainerTest {
 
                 Context context = config.getContext();
                 assertTrue(context.get(Context.Ref.of(Component.class)).isPresent());
+            }
+
+            @Nested
+            public class WithQualifier {
+                //TODO dependency missing if qualifier not match
+                //TODO check cyclic dependencies with qualifier
             }
         }
 
