@@ -27,8 +27,8 @@ public interface Context {
             return new Ref(type, null);
         }
 
-        public static Ref of(Type type, Annotation qualifier) {
-            return new Ref(type, qualifier);
+        public static <T> Ref<T> of(Class<T> component, Annotation qualifier) {
+            return new Ref(component, qualifier);
         }
 
         public static <T> Ref<T> of(Class<T> component) {

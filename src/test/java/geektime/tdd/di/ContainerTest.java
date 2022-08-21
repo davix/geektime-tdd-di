@@ -153,9 +153,34 @@ public class ContainerTest {
                     config.bind(Component.class, instance, new NamedLiteral("ChosenOne"));
                     Context context = config.getContext();
 
-                    Component chosenOne = (Component) context.get(Context.Ref.of(Component.class, new NamedLiteral("ChosenOne"))).get();
+                    Component chosenOne = context.get(Context.Ref.of(Component.class, new NamedLiteral("ChosenOne"))).get();
                     assertSame(instance, chosenOne);
                 }
+
+                @Test
+                public void should_bind_component_with_qualifier() {
+                    Dependency dependency = new Dependency() {
+                    };
+                    config.bind(Dependency.class, dependency);
+                    config.bind(InjectConstructor.class,
+                            InjectConstructor.class,
+                            new NamedLiteral("ChosenOne"));
+                    Context context = config.getContext();
+
+                    InjectConstructor chosenOne = context.get(Context.Ref.of(InjectConstructor.class, new NamedLiteral("ChosenOne"))).get();
+                    assertSame(dependency, chosenOne.dependency);
+                }
+
+                static class InjectConstructor {
+                    Dependency dependency;
+
+                    @Inject
+                    public InjectConstructor(Dependency dependency) {
+                        this.dependency = dependency;
+                    }
+                }
+
+
                 //TODO binding component with multiple qualifiers
                 //TODO throw illegal component if illegal qualifier
             }
