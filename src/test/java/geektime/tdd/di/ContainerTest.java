@@ -373,7 +373,6 @@ public class ContainerTest {
 
             @Nested
             public class WithQualifier {
-                //TODO dependency missing if qualifier not match
                 @Test
                 public void should_throw_exception_if_dependency_with_qualifier_not_found() {
                     config.bind(Dependency.class, new Dependency() {
@@ -390,7 +389,29 @@ public class ContainerTest {
                     public InjectConstructor(@Skywalker Dependency dependency) {
                     }
                 }
-                //TODO check cyclic dependencies with qualifier
+
+                static class SkywalkerDependency implements Dependency {
+                    @Inject
+                    public SkywalkerDependency(@jakarta.inject.Named("ChosenOne") Dependency dependency) {
+                    }
+                }
+
+                static class NotCyclicDependency implements Dependency {
+                    @Inject
+                    public NotCyclicDependency(@Skywalker Dependency dependency) {
+                    }
+                }
+
+                @Test
+                public void should_not_throw_cyclic_exception_if_dependency_with_same_type_tagged_with_different_qualifiers() {
+                    Dependency instance = new Dependency() {
+                    };
+                    config.bind(Dependency.class, instance, new NamedLiteral("ChosenOne"));
+                    config.bind(Dependency.class, SkywalkerDependency.class, new SkywalkerLiteral());
+                    config.bind(Dependency.class, NotCyclicDependency.class);
+
+                    assertDoesNotThrow(() -> config.getContext());
+                }
             }
         }
 
@@ -419,6 +440,11 @@ record NamedLiteral(String value) implements jakarta.inject.Named {
             return Objects.equals(value, named.value());
         else
             return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return "value".hashCode() * 127 ^ value.hashCode();
     }
 }
 
