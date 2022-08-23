@@ -228,8 +228,8 @@ public class ContainerTest {
                 config.bind(TestComponent.class, component);
 
                 DependencyNotFoundException exception = assertThrows(DependencyNotFoundException.class, () -> config.getContext());
-                assertEquals(Dependency.class, exception.getDependency());
-                assertEquals(TestComponent.class, exception.getComponent());
+                assertEquals(Dependency.class, exception.getDependency().type());
+                assertEquals(TestComponent.class, exception.getComponent().type());
             }
 
             public static Stream<Arguments> should_throw_exception_if_dependency_not_found() {

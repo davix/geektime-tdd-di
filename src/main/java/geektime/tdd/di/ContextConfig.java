@@ -62,7 +62,7 @@ public class ContextConfig {
         for (ComponentRef ref : components.get(c).getDependencies()) {
             Component comp = ref.component();
             if (!components.containsKey(comp))
-                throw new DependencyNotFoundException(c.type(), ref.getComponentType());
+                throw new DependencyNotFoundException(c, ref.component());
             if (!ref.isContainer()) {
                 if (visiting.contains(ref.getComponentType()))
                     throw new CyclicDependenciesFound(visiting);
