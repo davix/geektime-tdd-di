@@ -378,9 +378,11 @@ public class ContainerTest {
                 public void should_throw_exception_if_dependency_with_qualifier_not_found() {
                     config.bind(Dependency.class, new Dependency() {
                     });
-                    config.bind(InjectConstructor.class, InjectConstructor.class);
+                    config.bind(InjectConstructor.class, InjectConstructor.class, new NamedLiteral("Owner"));
 
-                    assertThrows(DependencyNotFoundException.class, () -> config.getContext());
+                    DependencyNotFoundException exception = assertThrows(DependencyNotFoundException.class, () -> config.getContext());
+                    assertEquals(new Component(InjectConstructor.class, new NamedLiteral("Owner")), exception.getComponent());
+                    assertEquals(new Component(Dependency.class, new SkywalkerLiteral()), exception.getDependency());
                 }
 
                 static class InjectConstructor {
@@ -431,6 +433,12 @@ record SkywalkerLiteral() implements Skywalker {
     @Override
     public Class<? extends Annotation> annotationType() {
         return Skywalker.class;
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof Skywalker;
     }
 }
 
