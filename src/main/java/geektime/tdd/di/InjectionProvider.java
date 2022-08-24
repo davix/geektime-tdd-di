@@ -5,7 +5,10 @@ import jakarta.inject.Qualifier;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -57,17 +60,25 @@ class InjectionProvider<T> implements ContextConfig.Provider<T> {
     }
 
     private ComponentRef<?> toComponentRef(Parameter p) {
-        Annotation qualifier = stream(p.getAnnotations()).filter(a ->
-                        a.annotationType().isAnnotationPresent(Qualifier.class))
-                .findFirst().orElse(null);
+        Annotation qualifier = getQualifier(p);
         return ComponentRef.of(p.getParameterizedType(), qualifier);
     }
 
-    private ComponentRef toComponentRef(Field f) {
-        Annotation qualifier = stream(f.getAnnotations()).filter(a ->
+    private static Annotation getQualifier(Parameter p) {
+        return stream(p.getAnnotations()).filter(a ->
                         a.annotationType().isAnnotationPresent(Qualifier.class))
                 .findFirst().orElse(null);
+    }
+
+    private ComponentRef toComponentRef(Field f) {
+        Annotation qualifier = getQualifier(f);
         return ComponentRef.of(f.getGenericType(), qualifier);
+    }
+
+    private static Annotation getQualifier(Field f) {
+        return stream(f.getAnnotations()).filter(a ->
+                        a.annotationType().isAnnotationPresent(Qualifier.class))
+                .findFirst().orElse(null);
     }
 
     private static <T> List<Field> getFields(Class<T> component) {
@@ -127,15 +138,15 @@ class InjectionProvider<T> implements ContextConfig.Provider<T> {
 
     private static Object[] toDependencies(Context context, Executable executable) {
         return stream(executable.getParameters())
-                .map(p -> toDependency(context, p.getParameterizedType())).toArray(Object[]::new);
+                .map(p -> toDependency(context, p.getParameterizedType(), getQualifier(p))).toArray(Object[]::new);
     }
 
     private Object toDependency(Context context, Field f) {
-        return toDependency(context, f.getGenericType());
+        return toDependency(context, f.getGenericType(), null);
     }
 
-    private static Object toDependency(Context context, Type type) {
-        return ((Optional) context.get(ComponentRef.of(type))).get();
+    private static Object toDependency(Context context, Type type, Annotation qualifier) {
+        return context.get(ComponentRef.of(type, qualifier)).get();
     }
 
 }
