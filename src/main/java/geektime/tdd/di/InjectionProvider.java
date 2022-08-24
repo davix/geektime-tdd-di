@@ -142,7 +142,7 @@ class InjectionProvider<T> implements ContextConfig.Provider<T> {
     }
 
     private Object toDependency(Context context, Field f) {
-        return toDependency(context, f.getGenericType(), null);
+        return toDependency(context, f.getGenericType(), getQualifier(f));
     }
 
     private static Object toDependency(Context context, Type type, Annotation qualifier) {
