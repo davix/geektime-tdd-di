@@ -20,6 +20,7 @@ class InjectionProvider<T> implements ContextConfig.Provider<T> {
     private Constructor<T> constructor;
     private List<Field> fields;
     private List<Method> methods;
+    private List<ComponentRef> dependencies;
 
     public InjectionProvider(Class<T> component) {
         if (Modifier.isAbstract(component.getModifiers()))
@@ -33,6 +34,8 @@ class InjectionProvider<T> implements ContextConfig.Provider<T> {
             throw new IllegalComponentException();
         if (methods.stream().anyMatch(m -> m.getTypeParameters().length != 0))
             throw new IllegalComponentException();
+
+        dependencies = getDependencies();
     }
 
     @Override
@@ -65,9 +68,11 @@ class InjectionProvider<T> implements ContextConfig.Provider<T> {
     }
 
     private static Annotation getQualifier(Parameter p) {
-        return stream(p.getAnnotations()).filter(a ->
-                        a.annotationType().isAnnotationPresent(Qualifier.class))
-                .findFirst().orElse(null);
+        List<Annotation> qualifiers = stream(p.getAnnotations()).filter(a ->
+                a.annotationType().isAnnotationPresent(Qualifier.class)).toList();
+        if (qualifiers.size() > 1)
+            throw new IllegalComponentException();
+        return qualifiers.stream().findFirst().orElse(null);
     }
 
     private ComponentRef toComponentRef(Field f) {
