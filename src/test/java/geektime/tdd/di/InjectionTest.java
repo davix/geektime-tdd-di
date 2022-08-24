@@ -106,8 +106,6 @@ public class InjectionTest {
 
         @Nested
         class WithQualifier {
-            //TODO inject with qualifier
-
             @BeforeEach
             public void before() {
                 Mockito.reset(context);
@@ -355,12 +353,28 @@ public class InjectionTest {
 
         @Nested
         class WithQualifier {
-            //TODO inject with qualifier
+            @BeforeEach
+            public void before() {
+                Mockito.reset(context);
+                Mockito.when(context.get(eq(ComponentRef.of(Dependency.class, new NamedLiteral("ChosenOne"))))).thenReturn(Optional.of(dependency));
+            }
+
             static class InjectMethod {
+                Dependency dependency;
+
                 @Inject
                 void install(@Named("ChosenOne") Dependency dependency) {
+                    this.dependency = dependency;
                 }
             }
+
+            @Test
+            public void should_inject_dependency_with_qualifier_via_method() {
+                InjectionProvider<InjectMethod> provider = new InjectionProvider<>(InjectMethod.class);
+                InjectMethod component = provider.get(context);
+                assertEquals(dependency, component.dependency);
+            }
+
 
             @Test
             public void should_include_dependency_with_qualifier() {
