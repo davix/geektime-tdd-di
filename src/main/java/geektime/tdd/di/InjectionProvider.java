@@ -15,19 +15,19 @@ import static java.util.stream.Stream.concat;
 
 class InjectionProvider<T> implements ContextConfig.Provider<T> {
     private Injectable<Constructor<T>> constructor;
-    private List<Field> fields;
+    private List<Injectable<Field>> fields;
     private List<Injectable<Method>> methods;
-    private List<ComponentRef> dependencies;
+    private List<ComponentRef<?>> dependencies;
 
     public InjectionProvider(Class<T> component) {
         if (Modifier.isAbstract(component.getModifiers()))
             throw new IllegalComponentException();
 
-        this.constructor = getInjectable(getConstructor(component));
-        this.fields = getFields(component);
-        this.methods = getMethods(component).stream().map(m -> getInjectable(m)).toList();
+        this.constructor = Injectable.of(getConstructor(component));
+        this.fields = getFields(component).stream().map(Injectable::of).toList();
+        this.methods = getMethods(component).stream().map(Injectable::of).toList();
 
-        if (fields.stream().anyMatch(f -> Modifier.isFinal(f.getModifiers())))
+        if (fields.stream().map(Injectable::element).anyMatch(f -> Modifier.isFinal(f.getModifiers())))
             throw new IllegalComponentException();
         if (methods.stream().map(Injectable::element).anyMatch(m -> m.getTypeParameters().length != 0))
             throw new IllegalComponentException();
@@ -35,18 +35,12 @@ class InjectionProvider<T> implements ContextConfig.Provider<T> {
         dependencies = getDependencies();
     }
 
-    private static <E extends Executable> Injectable<E> getInjectable(E element) {
-        ComponentRef<?>[] required = stream(element.getParameters()).map(InjectionProvider::toComponentRef).toArray(ComponentRef<?>[]::new);
-        Injectable<E> injectable = new Injectable<>(element, required);
-        return injectable;
-    }
-
     @Override
     public T get(Context context) {
         try {
             T instance = constructor.element().newInstance(constructor.toDependencies(context));
-            for (Field f : fields) {
-                f.set(instance, toDependency(context, f));
+            for (Injectable<Field> f : fields) {
+                f.element().set(instance, f.toDependencies(context)[0]);
             }
             for (Injectable<Method> m : methods) {
                 m.element().invoke(instance, m.toDependencies(context));
@@ -58,15 +52,24 @@ class InjectionProvider<T> implements ContextConfig.Provider<T> {
     }
 
     static record Injectable<E extends AccessibleObject>(E element, ComponentRef<?>[] required) {
+        static <E extends Executable> Injectable<E> of(E element) {
+            ComponentRef<?>[] required = stream(element.getParameters()).map(InjectionProvider::toComponentRef).toArray(ComponentRef<?>[]::new);
+            return new Injectable<>(element, required);
+        }
+
+        static Injectable<Field> of(Field f) {
+            return new Injectable<>(f, new ComponentRef<?>[]{toComponentRef(f)});
+        }
+
         Object[] toDependencies(Context context) {
             return stream(required).map(context::get).map(Optional::get).toArray();
         }
     }
 
     @Override
-    public List<ComponentRef> getDependencies() {
-        return concat(concat(stream(constructor.element().getParameters()).map(InjectionProvider::toComponentRef),
-                        fields.stream().map(this::toComponentRef)),
+    public List<ComponentRef<?>> getDependencies() {
+        return concat(concat(stream(constructor.required()),
+                        fields.stream().flatMap(f -> stream(f.required()))),
                 methods.stream().flatMap(m -> stream(m.required()))
         ).toList();
     }
@@ -84,7 +87,7 @@ class InjectionProvider<T> implements ContextConfig.Provider<T> {
         return qualifiers.stream().findFirst().orElse(null);
     }
 
-    private ComponentRef toComponentRef(Field f) {
+    private static ComponentRef toComponentRef(Field f) {
         Annotation qualifier = getQualifier(f);
         return ComponentRef.of(f.getGenericType(), qualifier);
     }
